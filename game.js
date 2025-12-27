@@ -898,6 +898,11 @@ class Game {
         const armsCost = armsBaseCost * Math.pow(2, armsLevel);
         const canUpgradeArms = armsLevel < armsMaxLevel && this.player.money >= armsCost;
 
+        // Bomb restock cost (1 gold block = $150)
+        const bombRestockCost = 150;
+        const needsBombRestock = this.player.bombs < this.player.maxBombs;
+        const canRestockBombs = needsBombRestock && this.player.money >= bombRestockCost;
+
         let armsButtonHTML = '';
         if (armsLevel >= armsMaxLevel) {
             armsButtonHTML = `<button class="shop-btn" disabled>ROBOT ARMS - MAX LEVEL</button>`;
@@ -912,8 +917,8 @@ class Game {
             <button class="shop-btn" id="repair-hull-dynamic-btn" ${!canRepair ? 'disabled' : ''}>
                 REPAIR HULL - $${repairCost}
             </button>
-            <button class="shop-btn" id="restock-bombs-btn">
-                RESTOCK BOMBS (Free)
+            <button class="shop-btn" id="restock-bombs-btn" ${!canRestockBombs ? 'disabled' : ''}>
+                RESTOCK BOMBS - $${bombRestockCost}
             </button>
             ${armsButtonHTML}
             <div style="color: #888; margin-top: 10px;">
@@ -928,10 +933,7 @@ class Game {
         const armsBtn = document.getElementById('upgrade-arms-btn');
 
         if (repairBtn) repairBtn.addEventListener('click', () => this.repairHull());
-        if (bombsBtn) bombsBtn.addEventListener('click', () => {
-            this.player.bombs = this.player.maxBombs;
-            this.updateShopUI();
-        });
+        if (bombsBtn) bombsBtn.addEventListener('click', () => this.restockBombs());
         if (armsBtn) armsBtn.addEventListener('click', () => this.upgradeRobotArms());
     }
 
@@ -944,6 +946,16 @@ class Game {
         if (armsLevel < armsMaxLevel && this.player.money >= armsCost) {
             this.player.money -= armsCost;
             this.player.upgrades.arms = armsLevel + 1;
+            this.audio.playCollect();
+            this.updateShopUI();
+        }
+    }
+
+    restockBombs() {
+        const bombRestockCost = 150; // Cost of 1 gold block
+        if (this.player.bombs < this.player.maxBombs && this.player.money >= bombRestockCost) {
+            this.player.money -= bombRestockCost;
+            this.player.bombs = this.player.maxBombs;
             this.audio.playCollect();
             this.updateShopUI();
         }
@@ -1633,23 +1645,23 @@ class World {
             return { type: BLOCK_TYPES.AIR, mineral: null };
         }
 
-        // SHOP PLATFORMS - 2 BOMB_ROCK blocks under each shop at surface level
+        // SHOP PLATFORMS - 2 UNBREAKABLE blocks under each shop at surface level
         if (y === SURFACE_LEVEL) {
             // FUEL shop at x=10: blocks (9,5) and (10,5)
             if (x === 9 || x === 10) {
-                return { type: BLOCK_TYPES.BOMB_ROCK, mineral: null };
+                return { type: BLOCK_TYPES.UNBREAKABLE, mineral: null };
             }
             // SELL shop at x=20: blocks (19,5) and (20,5)
             if (x === 19 || x === 20) {
-                return { type: BLOCK_TYPES.BOMB_ROCK, mineral: null };
+                return { type: BLOCK_TYPES.UNBREAKABLE, mineral: null };
             }
             // UPGRADE shop at x=40: blocks (39,5) and (40,5)
             if (x === 39 || x === 40) {
-                return { type: BLOCK_TYPES.BOMB_ROCK, mineral: null };
+                return { type: BLOCK_TYPES.UNBREAKABLE, mineral: null };
             }
             // REPAIR shop at x=50: blocks (49,5) and (50,5)
             if (x === 49 || x === 50) {
-                return { type: BLOCK_TYPES.BOMB_ROCK, mineral: null };
+                return { type: BLOCK_TYPES.UNBREAKABLE, mineral: null };
             }
         }
 
