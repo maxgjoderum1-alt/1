@@ -762,6 +762,7 @@ class Player {
         }
         if (keys['ArrowDown'] || keys['s'] || keys['S']) {
             this.drill(world, game);
+            isThrusting = true; // Drilling also consumes fuel
         }
 
         // Drop minerals
@@ -820,9 +821,9 @@ class Player {
             this.vy = 0;
         }
 
-        // Fuel consumption - only when thrusting
+        // Fuel consumption - when using WASD/arrow keys
         if (isThrusting) {
-            const fuelConsumption = 0.08 + Math.abs(this.vx) * 0.01 + Math.abs(this.vy) * 0.01;
+            const fuelConsumption = 0.15 + Math.abs(this.vx) * 0.02 + Math.abs(this.vy) * 0.02;
             this.fuel = Math.max(0, this.fuel - fuelConsumption);
         }
 
