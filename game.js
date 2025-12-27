@@ -204,11 +204,16 @@ class Game {
         this.gameOver = false;
         this.victory = false;
         this.running = true;
+        this.inShop = false; // Ensure not in shop
+        this.particles = []; // Clear particles
 
         document.getElementById('start-menu').style.display = 'none';
         document.getElementById('game-screen').style.display = 'block';
         document.getElementById('game-over-overlay').style.display = 'none';
         document.getElementById('victory-overlay').style.display = 'none';
+        document.getElementById('shop-overlay').style.display = 'none'; // Ensure shop closed
+
+        console.log('🎮 NEW GAME STARTED', { running: this.running, inShop: this.inShop, fuel: this.player.fuel });
 
         this.gameLoop();
     }
@@ -240,7 +245,10 @@ class Game {
     }
 
     gameLoop() {
-        if (!this.running || this.gameOver || this.victory) return;
+        if (!this.running || this.gameOver || this.victory) {
+            console.log('🛑 GAME LOOP BLOCKED:', { running: this.running, gameOver: this.gameOver, victory: this.victory });
+            return;
+        }
 
         this.update();
         this.render();
@@ -250,7 +258,10 @@ class Game {
     }
 
     update() {
-        if (this.inShop) return;
+        if (this.inShop) {
+            console.log('🏪 UPDATE BLOCKED - IN SHOP');
+            return;
+        }
 
         this.player.update(this.keys, this.world, this);
 
@@ -729,6 +740,17 @@ class Player {
     }
 
     update(keys, world, game) {
+        // Debug: Log every 60 frames (roughly 1 second)
+        if (Math.random() < 0.016) {
+            console.log('🎮 PLAYER UPDATE:', {
+                position: { x: this.x.toFixed(2), y: this.y.toFixed(2) },
+                velocity: { vx: this.vx.toFixed(4), vy: this.vy.toFixed(4) },
+                speed: this.speed,
+                fuel: this.fuel.toFixed(1),
+                keysPressed: Object.keys(keys).filter(k => keys[k])
+            });
+        }
+
         // Apply gravity (balanced - not too strong)
         this.vy += 0.05;
 
