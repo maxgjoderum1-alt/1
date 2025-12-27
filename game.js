@@ -94,10 +94,6 @@ class Bomb {
             return;
         }
 
-        // Apply velocity
-        this.x += this.vx;
-        this.y += this.vy;
-
         // Apply gravity
         this.vy += 0.05;
 
@@ -105,14 +101,21 @@ class Bomb {
         this.vx *= 0.99;
         this.vy *= 0.99;
 
-        // Stop movement if on ground (but don't explode - let timer handle that)
+        // Apply velocity
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // Collision detection - keep bomb in air, not inside blocks
         const blockX = Math.floor(this.x);
-        const blockY = Math.floor(this.y + 0.1);
+        const blockY = Math.floor(this.y);
         const block = world.getBlock(blockX, blockY);
 
+        // If bomb is inside a solid block, push it out
         if (block && block.type !== BLOCK_TYPES.AIR) {
+            // Push bomb up to sit on top of the block
+            this.y = blockY;
             this.vy = 0;
-            this.vx *= 0.9; // Slow down on ground
+            this.vx *= 0.8; // Friction when on ground
         }
     }
 
