@@ -244,12 +244,45 @@ button:active {
     flex-direction: column;
 }
 
+.shop-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-shrink: 0;
+}
+
 .shop-content h2 {
     color: #0f0;
     font-size: 32px;
-    margin-bottom: 20px;
+    margin: 0;
     text-align: center;
+    flex: 1;
+}
+
+.close-x-btn {
+    background: transparent;
+    border: 2px solid #0f0;
+    color: #0f0;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    margin: 0;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.2s;
     flex-shrink: 0;
+}
+
+.close-x-btn:hover {
+    background: #0f0;
+    color: #000;
+    box-shadow: 0 0 10px #0f0;
+}
+
+.close-x-btn:active {
+    transform: scale(0.9);
 }
 
 .shop-section {
