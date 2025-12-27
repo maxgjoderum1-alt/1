@@ -87,6 +87,13 @@ class Bomb {
     update(world) {
         if (this.exploded) return;
 
+        // Check if fuse timer has expired (only explodes after 1.5 seconds)
+        const timeAlive = Date.now() - this.createdTime;
+        if (timeAlive >= this.fuseTime) {
+            this.exploded = true;
+            return;
+        }
+
         // Apply velocity
         this.x += this.vx;
         this.y += this.vy;
@@ -98,20 +105,14 @@ class Bomb {
         this.vx *= 0.99;
         this.vy *= 0.99;
 
-        // Check if fuse timer has expired
-        const timeAlive = Date.now() - this.createdTime;
-        if (timeAlive >= this.fuseTime) {
-            this.exploded = true;
-            return;
-        }
-
-        // Also explode if hit ground (solid block)
+        // Stop movement if on ground (but don't explode - let timer handle that)
         const blockX = Math.floor(this.x);
-        const blockY = Math.floor(this.y);
+        const blockY = Math.floor(this.y + 0.1);
         const block = world.getBlock(blockX, blockY);
 
         if (block && block.type !== BLOCK_TYPES.AIR) {
-            this.exploded = true;
+            this.vy = 0;
+            this.vx *= 0.9; // Slow down on ground
         }
     }
 
