@@ -9,6 +9,14 @@ const WORLD_HEIGHT = 200;
 const SURFACE_LEVEL = 5;
 const VICTORY_DEPTH = 180;
 
+// Shop locations on surface
+const SHOPS = {
+    FUEL: { x: 10, y: SURFACE_LEVEL - 1, name: 'FUEL STATION', color: '#00ff00' },
+    SELL: { x: 20, y: SURFACE_LEVEL - 1, name: 'TRADING POST', color: '#ffff00' },
+    UPGRADE: { x: 40, y: SURFACE_LEVEL - 1, name: 'UPGRADE CENTER', color: '#00aaff' },
+    REPAIR: { x: 50, y: SURFACE_LEVEL - 1, name: 'REPAIR & ITEMS', color: '#ff9900' }
+};
+
 // Mineral types
 const MINERALS = {
     DIRT: { name: 'Dirt', color: '#654321', value: 1, weight: 1, rarity: 1.0 },
@@ -190,7 +198,8 @@ class Game {
 
     newGame() {
         this.world = new World();
-        this.player = new Player(WORLD_WIDTH / 2, SURFACE_LEVEL + 10); // Start underground
+        this.player = new Player(WORLD_WIDTH / 2, SURFACE_LEVEL - 2); // Start on surface
+        this.currentShop = null;
         this.gameOver = false;
         this.victory = false;
         this.running = true;
@@ -252,10 +261,17 @@ class Game {
             }
         }
 
-        // Check for surface landing - only open shop if player is on surface AND not moving much
+        // Check proximity to shops - only when on surface and stationary
         const speed = Math.sqrt(this.player.vx * this.player.vx + this.player.vy * this.player.vy);
-        if (this.player.y <= SURFACE_LEVEL - 1 && speed < 0.2 && !this.inShop) {
-            this.openShop();
+        if (this.player.y <= SURFACE_LEVEL && speed < 0.2 && !this.inShop) {
+            // Check each shop
+            for (const [shopType, shop] of Object.entries(SHOPS)) {
+                const distance = Math.abs(this.player.x - shop.x);
+                if (distance < 2) {
+                    this.openShop(shopType);
+                    break;
+                }
+            }
         }
 
         // Check for game over
@@ -393,18 +409,15 @@ class Game {
         }
     }
 
-    openShop() {
+    openShop(shopType) {
         this.inShop = true;
+        this.currentShop = shopType;
         this.player.vx = 0;
         this.player.vy = 0;
-        this.player.y = SURFACE_LEVEL - 2;
         this.player.isOnSurface = true;
 
         // Cool down heat when on surface
-        this.player.heat = Math.max(0, this.player.heat - 30);
-
-        // Restock bombs
-        this.player.bombs = this.player.maxBombs;
+        this.player.heat = Math.max(0, this.player.heat - 10);
 
         document.getElementById('shop-overlay').style.display = 'flex';
         this.updateShopUI();
@@ -418,25 +431,111 @@ class Game {
     }
 
     updateShopUI() {
-        // Update service costs
-        const repairCost = Math.ceil((this.player.maxHull - this.player.hull) * 2);
-        document.getElementById('repair-cost').textContent = repairCost;
-        document.getElementById('repair-hull-btn').disabled =
-            repairCost === 0 || this.player.money < repairCost;
+        const shopInfo = SHOPS[this.currentShop];
+        const shopContent = document.querySelector('.shop-content');
+
+        // Update shop title
+        document.querySelector('.shop-content h2').textContent = shopInfo.name;
+        document.querySelector('.shop-content h2').style.color = shopInfo.color;
+
+        // Clear sections
+        const sections = document.querySelectorAll('.shop-section');
+        sections.forEach(section => section.style.display = 'none');
+
+        // Show relevant section based on shop type
+        if (this.currentShop === 'FUEL') {
+            this.renderFuelShop();
+        } else if (this.currentShop === 'SELL') {
+            this.renderSellShop();
+        } else if (this.currentShop === 'UPGRADE') {
+            this.renderUpgradeShop();
+        } else if (this.currentShop === 'REPAIR') {
+            this.renderRepairShop();
+        }
+    }
+
+    renderFuelShop() {
+        const section = document.querySelector('.shop-section');
+        section.style.display = 'block';
 
         const refuelCost = Math.ceil((this.player.maxFuel - this.player.fuel) * 0.5);
-        document.getElementById('refuel-cost').textContent = refuelCost;
-        document.getElementById('refuel-btn').disabled =
-            refuelCost === 0 || this.player.money < refuelCost;
+        const canRefuel = refuelCost > 0 && this.player.money >= refuelCost;
 
-        document.getElementById('sell-cargo-btn').disabled = this.player.cargo.length === 0;
+        section.innerHTML = `
+            <h3>FUEL SERVICES</h3>
+            <button class="shop-btn" id="refuel-full-btn" ${!canRefuel ? 'disabled' : ''}>
+                REFUEL - $${refuelCost}
+            </button>
+            <div style="color: #888; margin-top: 10px;">
+                Current: ${Math.floor(this.player.fuel)}/${this.player.maxFuel}
+            </div>
+        `;
 
-        // Update upgrades
+        const refuelBtn = document.getElementById('refuel-full-btn');
+        if (refuelBtn) refuelBtn.addEventListener('click', () => this.refuel());
+    }
+
+    renderSellShop() {
+        const section = document.querySelector('.shop-section');
+        section.style.display = 'block';
+
+        let totalValue = 0;
+        this.player.cargo.forEach(mineral => totalValue += mineral.value);
+
+        section.innerHTML = `
+            <h3>TRADING POST</h3>
+            <div style="color: #888; margin-bottom: 15px;">
+                Cargo: ${this.player.cargo.length} items worth $${totalValue}
+            </div>
+            <button class="shop-btn" id="sell-all-btn" ${this.player.cargo.length === 0 ? 'disabled' : ''}>
+                SELL ALL CARGO - $${totalValue}
+            </button>
+        `;
+
+        const sellBtn = document.getElementById('sell-all-btn');
+        if (sellBtn) sellBtn.addEventListener('click', () => this.sellCargo());
+    }
+
+    renderUpgradeShop() {
+        const section = document.querySelector('.shop-section');
+        section.style.display = 'block';
+        section.innerHTML = '<h3>UPGRADES</h3><div id="upgrades-list-dynamic"></div>';
         this.renderUpgrades();
     }
 
+    renderRepairShop() {
+        const section = document.querySelector('.shop-section');
+        section.style.display = 'block';
+
+        const repairCost = Math.ceil((this.player.maxHull - this.player.hull) * 2);
+        const canRepair = repairCost > 0 && this.player.money >= repairCost;
+
+        section.innerHTML = `
+            <h3>REPAIR & ITEMS</h3>
+            <button class="shop-btn" id="repair-hull-dynamic-btn" ${!canRepair ? 'disabled' : ''}>
+                REPAIR HULL - $${repairCost}
+            </button>
+            <button class="shop-btn" id="restock-bombs-btn">
+                RESTOCK BOMBS (Free)
+            </button>
+            <div style="color: #888; margin-top: 10px;">
+                Hull: ${Math.floor(this.player.hull)}/${this.player.maxHull}<br>
+                Bombs: ${this.player.bombs}/${this.player.maxBombs}
+            </div>
+        `;
+
+        const repairBtn = document.getElementById('repair-hull-dynamic-btn');
+        const bombsBtn = document.getElementById('restock-bombs-btn');
+        if (repairBtn) repairBtn.addEventListener('click', () => this.repairHull());
+        if (bombsBtn) bombsBtn.addEventListener('click', () => {
+            this.player.bombs = this.player.maxBombs;
+            this.updateShopUI();
+        });
+    }
+
     renderUpgrades() {
-        const upgradesList = document.getElementById('upgrades-list');
+        const upgradesList = document.getElementById('upgrades-list-dynamic') || document.getElementById('upgrades-list');
+        if (!upgradesList) return;
         upgradesList.innerHTML = '';
 
         this.player.availableUpgrades.forEach(upgrade => {
@@ -533,7 +632,7 @@ class Game {
 // PLAYER CLASS
 // ========================================
 class Player {
-    constructor(x = WORLD_WIDTH / 2, y = SURFACE_LEVEL + 10) {
+    constructor(x = WORLD_WIDTH / 2, y = SURFACE_LEVEL - 2) {
         this.x = x;
         this.y = y;
         this.vx = 0;
@@ -1066,6 +1165,27 @@ class World {
         ctx.moveTo(0, surfaceY);
         ctx.lineTo(ctx.canvas.width, surfaceY);
         ctx.stroke();
+
+        // Draw shops on surface
+        for (const [shopType, shop] of Object.entries(SHOPS)) {
+            const shopScreenX = shop.x * BLOCK_SIZE - camera.x;
+            const shopScreenY = shop.y * BLOCK_SIZE - camera.y;
+
+            // Draw shop building
+            ctx.fillStyle = shop.color;
+            ctx.fillRect(shopScreenX - 15, shopScreenY - 30, 30, 30);
+
+            // Draw shop border
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(shopScreenX - 15, shopScreenY - 30, 30, 30);
+
+            // Draw shop label
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 8px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(shopType[0], shopScreenX, shopScreenY - 15);
+        }
     }
 
     hexToRgb(hex) {
