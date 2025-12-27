@@ -1569,42 +1569,24 @@ class World {
             }
         };
 
-        // Fill left and right sides with slanted mountains
-        // Mountains extend from surface upward into sky and downward underground
+        // Fill mountains: All sky outside player boundaries + underground walls
         for (let y = Math.max(startY, -30); y < endY; y++) {
             const screenY = y * BLOCK_SIZE - camera.y;
 
-            // Calculate mountain width based on height (slanted effect)
-            let mountainWidth = 0;
             if (y < SURFACE_LEVEL) {
-                // Above surface - mountains slope OUTWARD (narrower at top, wider at base)
-                const heightAboveSurface = SURFACE_LEVEL - y; // 0 at surface, 35 at top
-                const maxHeight = 35; // From surface (5) to sky limit (-30)
-                mountainWidth = Math.floor((maxHeight - heightAboveSurface) * 0.3);
-            }
-
-            // Left side mountain - starts at player boundary (0.5) and extends outward
-            const leftBoundary = 0.5;
-            for (let x = startX; x <= leftBoundary && x < endX; x++) {
-                const distanceFromBoundary = leftBoundary - x;
-                if (distanceFromBoundary <= mountainWidth) {
+                // In the sky - fill everything outside player boundaries
+                // Left side: everything left of x=0.5
+                for (let x = startX; x < 0.5 && x < endX; x++) {
                     const screenX = x * BLOCK_SIZE - camera.x;
                     drawRockBlock(screenX, screenY, y);
                 }
-            }
-
-            // Right side mountain - starts at player boundary (59.5) and extends outward
-            const rightBoundary = WORLD_WIDTH - 0.5;
-            for (let x = Math.max(rightBoundary, startX); x < endX; x++) {
-                const distanceFromBoundary = x - rightBoundary;
-                if (distanceFromBoundary <= mountainWidth) {
+                // Right side: everything right of x=59.5
+                for (let x = Math.max(WORLD_WIDTH - 0.5, startX); x < endX; x++) {
                     const screenX = x * BLOCK_SIZE - camera.x;
                     drawRockBlock(screenX, screenY, y);
                 }
-            }
-
-            // Underground vertical walls (from surface down)
-            if (y >= SURFACE_LEVEL) {
+            } else {
+                // Underground - vertical walls
                 // Left wall
                 for (let x = startX; x < 0 && x < endX; x++) {
                     const screenX = x * BLOCK_SIZE - camera.x;
