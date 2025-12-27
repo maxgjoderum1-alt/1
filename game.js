@@ -350,8 +350,16 @@ class Game {
     }
 
     render() {
+        // Fill background with black
         this.ctx.fillStyle = '#000';
         this.ctx.fillRect(0, 0, this.width, this.height);
+
+        // Fill sky (above surface level) with light blue
+        const surfaceScreenY = SURFACE_LEVEL * BLOCK_SIZE - this.camera.y;
+        if (surfaceScreenY > 0) {
+            this.ctx.fillStyle = '#87CEEB'; // Light blue sky
+            this.ctx.fillRect(0, 0, this.width, surfaceScreenY);
+        }
 
         // Render world
         this.world.render(this.ctx, this.camera);
@@ -823,7 +831,7 @@ class Player {
 
         // Fuel consumption - when using WASD/arrow keys
         if (isThrusting) {
-            const fuelConsumption = 0.10 + Math.abs(this.vx) * 0.015 + Math.abs(this.vy) * 0.015;
+            const fuelConsumption = 0.05 + Math.abs(this.vx) * 0.01 + Math.abs(this.vy) * 0.01;
             this.fuel = Math.max(0, this.fuel - fuelConsumption);
         }
 
