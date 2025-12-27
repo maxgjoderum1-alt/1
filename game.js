@@ -290,7 +290,7 @@ class Game {
             }
 
             // Check if player is stationary at a shop
-            if (nearestShop && speed < 0.1 && this.hasLeftShopArea) {
+            if (nearestShop && speed < 0.25 && this.hasLeftShopArea) {
                 // Start timer if not already started
                 if (this.shopWaitStartTime === 0) {
                     this.shopWaitStartTime = now;
@@ -301,7 +301,7 @@ class Game {
                     this.openShop(nearestShop);
                     this.shopWaitStartTime = 0; // Reset for next time
                 }
-            } else if (speed >= 0.1) {
+            } else if (speed >= 0.25) {
                 // Reset timer if player starts moving
                 this.shopWaitStartTime = 0;
             }
@@ -709,7 +709,7 @@ class Player {
         this.isOnSurface = false;
 
         // Movement stats (affected by upgrades)
-        this.speed = 0.06;
+        this.speed = 0.04;
         this.drillPower = 1;
         this.cooling = 0.5;
         this.bombs = 3;
@@ -729,8 +729,8 @@ class Player {
     }
 
     update(keys, world, game) {
-        // Apply gravity (stronger to prevent flying)
-        this.vy += 0.08;
+        // Apply gravity (balanced - not too strong)
+        this.vy += 0.05;
 
         // Track if thrusting (for fuel consumption)
         let isThrusting = false;
@@ -765,12 +765,12 @@ class Player {
             keys['B'] = false;
         }
 
-        // Apply drag
-        this.vx *= 0.88;
-        this.vy *= 0.92;
+        // Apply drag (more drag for slower, more controllable movement)
+        this.vx *= 0.84;
+        this.vy *= 0.90;
 
         // Clamp velocity
-        const maxVel = 1.2;
+        const maxVel = 1.0;
         this.vx = Math.max(-maxVel, Math.min(maxVel, this.vx));
         this.vy = Math.max(-maxVel, Math.min(maxVel, this.vy));
 
@@ -903,11 +903,16 @@ class Player {
                         if (distX < 0.6 && distY < 0.6) {
                             // Push player away from block more forcefully
                             if (distX > distY) {
-                                this.x += (this.x > bx ? 0.1 : -0.1);
-                                this.vx *= -0.5; // Stronger bounce-back
+                                this.x += (this.x > bx ? 0.15 : -0.15);
+                                this.vx *= -0.6; // Stronger bounce-back
                             } else {
-                                this.y += (this.y > by ? 0.1 : -0.1);
-                                this.vy *= -0.5; // Stronger bounce-back
+                                this.y += (this.y > by ? 0.15 : -0.15);
+                                this.vy *= -0.6; // Stronger bounce-back
+                            }
+
+                            // Stop vertical velocity when hitting from below or above
+                            if (Math.abs(this.vy) > 0.3 && distY < distX) {
+                                this.vy = 0;
                             }
 
                             if (!collided && speed > 0.8) {
@@ -969,7 +974,7 @@ class Player {
 
     applyUpgrades() {
         // Engine
-        this.speed = 0.06 + (this.upgrades.engine || 0) * 0.02;
+        this.speed = 0.04 + (this.upgrades.engine || 0) * 0.015;
 
         // Drill
         this.drillPower = 1 + (this.upgrades.drill || 0);
