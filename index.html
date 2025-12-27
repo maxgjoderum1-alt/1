@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOTHERLOAD - Mining Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <div id="start-menu">
+            <h1>MOTHERLOAD</h1>
+            <p class="subtitle">Dig Deep. Find Treasure. Don't Die.</p>
+            <button id="new-game-btn">NEW GAME</button>
+            <button id="continue-btn" style="display: none;">CONTINUE</button>
+            <div class="instructions">
+                <h3>CONTROLS</h3>
+                <p>↑ = Up | ↓ = Drill Down | ← → = Move</p>
+                <p>SPACE = Drop Minerals | B = Bomb</p>
+            </div>
+        </div>
+
+        <div id="game-screen" style="display: none;">
+            <div id="ui-overlay">
+                <div class="ui-top">
+                    <div class="stat-group">
+                        <div class="stat-label">FUEL</div>
+                        <div class="stat-bar-container">
+                            <div id="fuel-bar" class="stat-bar fuel-bar"></div>
+                        </div>
+                        <span id="fuel-text">100/100</span>
+                    </div>
+
+                    <div class="stat-group">
+                        <div class="stat-label">HULL</div>
+                        <div class="stat-bar-container">
+                            <div id="hull-bar" class="stat-bar hull-bar"></div>
+                        </div>
+                        <span id="hull-text">100/100</span>
+                    </div>
+
+                    <div class="stat-group">
+                        <div class="stat-label">HEAT</div>
+                        <div class="stat-bar-container">
+                            <div id="heat-bar" class="stat-bar heat-bar"></div>
+                        </div>
+                        <span id="heat-text">0/100</span>
+                    </div>
+
+                    <div class="stat-group">
+                        <div class="stat-label">CARGO</div>
+                        <div class="stat-bar-container">
+                            <div id="cargo-bar" class="stat-bar cargo-bar"></div>
+                        </div>
+                        <span id="cargo-text">0/50</span>
+                    </div>
+
+                    <div class="money-display">
+                        <span class="money-label">$</span>
+                        <span id="money-value">0</span>
+                    </div>
+
+                    <div class="depth-display">
+                        <span class="depth-label">DEPTH:</span>
+                        <span id="depth-value">0m</span>
+                    </div>
+                </div>
+            </div>
+
+            <canvas id="game-canvas"></canvas>
+
+            <div id="shop-overlay" style="display: none;">
+                <div class="shop-content">
+                    <h2>SURFACE BASE</h2>
+                    <div class="shop-section">
+                        <h3>SERVICES</h3>
+                        <button id="sell-cargo-btn" class="shop-btn">SELL ALL CARGO</button>
+                        <button id="repair-hull-btn" class="shop-btn">REPAIR HULL - $<span id="repair-cost">0</span></button>
+                        <button id="refuel-btn" class="shop-btn">REFUEL - $<span id="refuel-cost">0</span></button>
+                    </div>
+
+                    <div class="shop-section">
+                        <h3>UPGRADES</h3>
+                        <div id="upgrades-list"></div>
+                    </div>
+
+                    <button id="close-shop-btn" class="shop-btn close-btn">LAUNCH</button>
+                </div>
+            </div>
+
+            <div id="game-over-overlay" style="display: none;">
+                <div class="game-over-content">
+                    <h2>GAME OVER</h2>
+                    <p id="game-over-reason"></p>
+                    <p>Final Depth: <span id="final-depth">0</span>m</p>
+                    <p>Money Earned: $<span id="final-money">0</span></p>
+                    <button id="restart-btn" class="shop-btn">TRY AGAIN</button>
+                </div>
+            </div>
+
+            <div id="victory-overlay" style="display: none;">
+                <div class="victory-content">
+                    <h2>VICTORY!</h2>
+                    <p>You've reached the planet's core!</p>
+                    <p id="victory-message"></p>
+                    <button id="new-game-victory-btn" class="shop-btn">NEW GAME</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
