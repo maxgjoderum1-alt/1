@@ -957,11 +957,21 @@ class Player {
                                 if (overlapX < overlapY) {
                                     // Push horizontally
                                     this.x += (this.x > bx ? overlapX : -overlapX);
-                                    this.vx *= -0.3; // Small bounce
+                                    // Stop horizontal velocity on collision
+                                    if (Math.abs(this.vx) > 0.1) {
+                                        this.vx *= -0.3; // Bounce if moving fast
+                                    } else {
+                                        this.vx = 0; // Just stop if moving slowly
+                                    }
                                 } else {
                                     // Push vertically (same logic as horizontal)
                                     this.y += (this.y > by ? overlapY : -overlapY);
-                                    this.vy *= -0.3; // Small bounce
+                                    // Stop vertical velocity on collision
+                                    if (Math.abs(this.vy) > 0.1) {
+                                        this.vy *= -0.3; // Bounce if moving fast
+                                    } else {
+                                        this.vy = 0; // Just stop if moving slowly
+                                    }
                                 }
 
                                 if (!collided && speed > 0.6) {
