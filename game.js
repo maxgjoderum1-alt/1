@@ -473,7 +473,7 @@ class Game {
                             // Spawn particles for destroyed block
                             const color = block.mineral ? block.mineral.color : '#8B7355';
                             this.spawnParticles(bx, by, color, 3);
-                            this.world.removeBlock(bx, by);
+                            this.world.setBlock(bx, by, BLOCK_TYPES.AIR);
                         }
                     }
                 }
