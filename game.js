@@ -1583,16 +1583,24 @@ class World {
                 mountainWidth = Math.floor((maxHeight - heightAboveSurface) * 0.3);
             }
 
-            // Left side mountain
-            for (let x = startX; x < mountainWidth && x < endX; x++) {
-                const screenX = x * BLOCK_SIZE - camera.x;
-                drawRockBlock(screenX, screenY, y);
+            // Left side mountain - starts at player boundary (0.5) and extends outward
+            const leftBoundary = 0.5;
+            for (let x = startX; x <= leftBoundary && x < endX; x++) {
+                const distanceFromBoundary = leftBoundary - x;
+                if (distanceFromBoundary <= mountainWidth) {
+                    const screenX = x * BLOCK_SIZE - camera.x;
+                    drawRockBlock(screenX, screenY, y);
+                }
             }
 
-            // Right side mountain
-            for (let x = Math.max(WORLD_WIDTH - mountainWidth, startX); x < endX; x++) {
-                const screenX = x * BLOCK_SIZE - camera.x;
-                drawRockBlock(screenX, screenY, y);
+            // Right side mountain - starts at player boundary (59.5) and extends outward
+            const rightBoundary = WORLD_WIDTH - 0.5;
+            for (let x = Math.max(rightBoundary, startX); x < endX; x++) {
+                const distanceFromBoundary = x - rightBoundary;
+                if (distanceFromBoundary <= mountainWidth) {
+                    const screenX = x * BLOCK_SIZE - camera.x;
+                    drawRockBlock(screenX, screenY, y);
+                }
             }
 
             // Underground vertical walls (from surface down)
