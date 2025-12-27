@@ -1219,16 +1219,16 @@ class World {
         // CAVE GENERATION - Random air pockets underground
         const depth = y - SURFACE_LEVEL;
 
-        // Create random caves/air pockets at various depths
+        // Create random caves/air pockets at various depths (increased for more caves)
         let caveProbability = 0;
         if (depth > 10 && depth < 100) {
-            caveProbability = 0.03; // 3% chance shallow caves
+            caveProbability = 0.10; // 10% chance shallow caves (was 3%)
         } else if (depth >= 100 && depth < 500) {
-            caveProbability = 0.05; // 5% chance medium caves
+            caveProbability = 0.12; // 12% chance medium caves (was 5%)
         } else if (depth >= 500 && depth < 2000) {
-            caveProbability = 0.04; // 4% chance deep caves
+            caveProbability = 0.10; // 10% chance deep caves (was 4%)
         } else if (depth >= 2000) {
-            caveProbability = 0.03; // 3% chance very deep caves
+            caveProbability = 0.08; // 8% chance very deep caves (was 3%)
         }
 
         // Random cave generation
