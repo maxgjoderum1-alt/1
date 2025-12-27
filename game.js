@@ -909,47 +909,44 @@ class Player {
         let collided = false;
         const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
 
-        // First check if player is inside a solid block
-        const centerBlock = world.getBlock(blockX, blockY);
-        if (centerBlock && centerBlock.type !== BLOCK_TYPES.AIR) {
-            // Player is inside a block - revert to old position
-            this.x = oldX;
-            this.y = oldY;
-            this.vx = 0;
-            this.vy = 0;
-            return;
-        }
-
-        // Check surrounding blocks
+        // Check surrounding blocks with proper collision bounds
         for (let dx = -1; dx <= 1; dx++) {
             for (let dy = -1; dy <= 1; dy++) {
                 const bx = blockX + dx;
                 const by = blockY + dy;
 
-                if (by >= 0 && by < WORLD_HEIGHT) {
+                if (by >= 0 && by < WORLD_HEIGHT && bx >= 0 && bx < WORLD_WIDTH) {
                     const block = world.getBlock(bx, by);
 
                     if (block && block.type !== BLOCK_TYPES.AIR) {
-                        // Check if player overlaps with block
+                        // Check if player overlaps with block (proper bounding box)
                         const distX = Math.abs(this.x - bx);
                         const distY = Math.abs(this.y - by);
 
-                        if (distX < 0.5 && distY < 0.5) {
-                            // Collision detected - push player away more forcefully
-                            if (distX > distY) {
-                                // Horizontal collision
-                                this.x += (this.x > bx ? 0.2 : -0.2);
-                                this.vx = 0; // Stop horizontal movement
-                            } else {
-                                // Vertical collision
-                                this.y += (this.y > by ? 0.2 : -0.2);
-                                this.vy = 0; // Stop vertical movement
-                            }
+                        // Player has a small hitbox (0.4 x 0.4), block is 1x1
+                        // Collision if distance is less than 0.7 (0.5 block + 0.2 player)
+                        if (distX < 0.7 && distY < 0.7) {
+                            // Check if actually overlapping (not just close)
+                            const overlapX = 0.7 - distX;
+                            const overlapY = 0.7 - distY;
 
-                            if (!collided && speed > 0.6) {
-                                // Damage on collisions
-                                this.hull -= speed * 0.3;
-                                collided = true;
+                            if (overlapX > 0 && overlapY > 0) {
+                                // Collision detected - resolve by smallest overlap
+                                if (overlapX < overlapY) {
+                                    // Push horizontally
+                                    this.x += (this.x > bx ? overlapX : -overlapX);
+                                    this.vx *= -0.3; // Small bounce
+                                } else {
+                                    // Push vertically
+                                    this.y += (this.y > by ? overlapY : -overlapY);
+                                    this.vy *= -0.3; // Small bounce
+                                }
+
+                                if (!collided && speed > 0.6) {
+                                    // Damage on fast collisions
+                                    this.hull -= speed * 0.3;
+                                    collided = true;
+                                }
                             }
                         }
                     }
