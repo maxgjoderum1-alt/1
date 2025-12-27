@@ -674,7 +674,7 @@ class Player {
         this.isOnSurface = false;
 
         // Movement stats (affected by upgrades)
-        this.speed = 0.1;
+        this.speed = 0.06;
         this.drillPower = 1;
         this.cooling = 0.5;
         this.bombs = 3;
@@ -695,15 +695,21 @@ class Player {
         // Apply gravity
         this.vy += 0.02;
 
+        // Track if thrusting (for fuel consumption)
+        let isThrusting = false;
+
         // Handle input with momentum
         if (keys['ArrowLeft']) {
             this.vx -= this.speed;
+            isThrusting = true;
         }
         if (keys['ArrowRight']) {
             this.vx += this.speed;
+            isThrusting = true;
         }
         if (keys['ArrowUp']) {
             this.vy -= this.speed * 1.5;
+            isThrusting = true;
         }
         if (keys['ArrowDown']) {
             this.drill(world, game);
@@ -723,11 +729,11 @@ class Player {
         }
 
         // Apply drag
-        this.vx *= 0.92;
-        this.vy *= 0.95;
+        this.vx *= 0.88;
+        this.vy *= 0.92;
 
         // Clamp velocity
-        const maxVel = 2;
+        const maxVel = 1.2;
         this.vx = Math.max(-maxVel, Math.min(maxVel, this.vx));
         this.vy = Math.max(-maxVel, Math.min(maxVel, this.vy));
 
@@ -744,9 +750,11 @@ class Player {
         // Check collision with blocks
         this.handleCollisions(world);
 
-        // Fuel consumption
-        const fuelConsumption = 0.04 + Math.abs(this.vx) * 0.01 + Math.abs(this.vy) * 0.01;
-        this.fuel = Math.max(0, this.fuel - fuelConsumption);
+        // Fuel consumption - only when thrusting
+        if (isThrusting) {
+            const fuelConsumption = 0.08 + Math.abs(this.vx) * 0.01 + Math.abs(this.vy) * 0.01;
+            this.fuel = Math.max(0, this.fuel - fuelConsumption);
+        }
 
         // Heat mechanics - heat increases with depth
         const depth = Math.max(0, this.y - SURFACE_LEVEL);
@@ -776,11 +784,11 @@ class Player {
         const sideBlockY = Math.floor(this.y);
 
         // Try drilling down first
-        let drilled = this.tryDrillBlock(world, game, blockX, blockY, 0, 0.1);
+        let drilled = this.tryDrillBlock(world, game, blockX, blockY, 0, 0);
 
         // If moving sideways, also drill in that direction
-        if (!drilled && Math.abs(this.vx) > 0.3) {
-            drilled = this.tryDrillBlock(world, game, sideBlockX, sideBlockY, Math.sign(this.vx) * 0.05, 0);
+        if (!drilled && Math.abs(this.vx) > 0.2) {
+            drilled = this.tryDrillBlock(world, game, sideBlockX, sideBlockY, 0, 0);
         }
     }
 
@@ -845,17 +853,17 @@ class Player {
                         const distY = Math.abs(this.y - by);
 
                         if (distX < 0.6 && distY < 0.6) {
-                            // Push player away from block
+                            // Push player away from block more forcefully
                             if (distX > distY) {
-                                this.x += (this.x > bx ? 0.05 : -0.05);
-                                this.vx *= -0.3;
+                                this.x += (this.x > bx ? 0.1 : -0.1);
+                                this.vx *= -0.5; // Stronger bounce-back
                             } else {
-                                this.y += (this.y > by ? 0.05 : -0.05);
-                                this.vy *= -0.3;
+                                this.y += (this.y > by ? 0.1 : -0.1);
+                                this.vy *= -0.5; // Stronger bounce-back
                             }
 
-                            if (!collided && speed > 1.2) {
-                                // Only damage on high-speed collisions
+                            if (!collided && speed > 0.8) {
+                                // Damage on medium-speed collisions
                                 this.hull -= speed * 0.5;
                                 collided = true;
                             }
@@ -913,7 +921,7 @@ class Player {
 
     applyUpgrades() {
         // Engine
-        this.speed = 0.1 + (this.upgrades.engine || 0) * 0.03;
+        this.speed = 0.06 + (this.upgrades.engine || 0) * 0.02;
 
         // Drill
         this.drillPower = 1 + (this.upgrades.drill || 0);
@@ -1232,8 +1240,8 @@ class World {
             }
         };
 
-        // Fill all visible out-of-bounds areas with mountains
-        for (let y = startY; y < endY; y++) {
+        // Fill left and right sides with mountains (only from y=0 downwards, not in sky)
+        for (let y = Math.max(0, startY); y < endY; y++) {
             const screenY = y * BLOCK_SIZE - camera.y;
 
             // Left side (x < 0)
@@ -1245,15 +1253,6 @@ class World {
             // Right side (x >= WORLD_WIDTH)
             for (let x = Math.max(WORLD_WIDTH, startX); x < endX; x++) {
                 const screenX = x * BLOCK_SIZE - camera.x;
-                drawRockBlock(screenX, screenY, y);
-            }
-        }
-
-        // Top area (y < 0) - fill entire width
-        for (let y = startY; y < 0 && y < endY; y++) {
-            for (let x = startX; x < endX; x++) {
-                const screenX = x * BLOCK_SIZE - camera.x;
-                const screenY = y * BLOCK_SIZE - camera.y;
                 drawRockBlock(screenX, screenY, y);
             }
         }
