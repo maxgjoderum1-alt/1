@@ -1416,25 +1416,45 @@ class World {
         ctx.lineTo(ctx.canvas.width, surfaceY);
         ctx.stroke();
 
-        // Draw shops on surface
+        // Draw shops as houses on surface
         for (const [shopType, shop] of Object.entries(SHOPS)) {
             const shopScreenX = shop.x * BLOCK_SIZE - camera.x;
             const shopScreenY = shop.y * BLOCK_SIZE - camera.y;
 
-            // Draw shop building
+            // Draw house base (walls)
+            ctx.fillStyle = '#8B4513'; // Brown walls
+            ctx.fillRect(shopScreenX - 20, shopScreenY - 35, 40, 35);
+
+            // Draw roof (triangle)
+            ctx.fillStyle = '#654321'; // Dark brown roof
+            ctx.beginPath();
+            ctx.moveTo(shopScreenX - 25, shopScreenY - 35); // Left corner
+            ctx.lineTo(shopScreenX, shopScreenY - 50); // Top peak
+            ctx.lineTo(shopScreenX + 25, shopScreenY - 35); // Right corner
+            ctx.closePath();
+            ctx.fill();
+
+            // Draw door
+            ctx.fillStyle = '#654321'; // Dark brown door
+            ctx.fillRect(shopScreenX - 6, shopScreenY - 18, 12, 18);
+
+            // Draw window
+            ctx.fillStyle = '#87CEEB'; // Light blue window
+            ctx.fillRect(shopScreenX - 16, shopScreenY - 28, 8, 8);
+            ctx.fillRect(shopScreenX + 8, shopScreenY - 28, 8, 8);
+
+            // Draw sign above door with shop name
             ctx.fillStyle = shop.color;
-            ctx.fillRect(shopScreenX - 15, shopScreenY - 30, 30, 30);
+            ctx.fillRect(shopScreenX - 15, shopScreenY - 48, 30, 10);
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(shopScreenX - 15, shopScreenY - 48, 30, 10);
 
-            // Draw shop border
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(shopScreenX - 15, shopScreenY - 30, 30, 30);
-
-            // Draw shop label
+            // Draw shop name on sign
             ctx.fillStyle = '#000';
-            ctx.font = 'bold 8px monospace';
+            ctx.font = 'bold 6px monospace';
             ctx.textAlign = 'center';
-            ctx.fillText(shopType[0], shopScreenX, shopScreenY - 15);
+            ctx.fillText(shop.name.split(' ')[0], shopScreenX, shopScreenY - 41);
         }
 
         // Draw mountain walls/rock in all out-of-bounds visible areas
