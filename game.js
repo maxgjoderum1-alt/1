@@ -11,10 +11,10 @@ const VICTORY_DEPTH = 9000;
 
 // Shop locations on surface
 const SHOPS = {
-    FUEL: { x: 10, y: SURFACE_LEVEL - 1, name: 'FUEL STATION', color: '#00ff00' },
-    SELL: { x: 20, y: SURFACE_LEVEL - 1, name: 'TRADING POST', color: '#ffff00' },
-    UPGRADE: { x: 40, y: SURFACE_LEVEL - 1, name: 'UPGRADE CENTER', color: '#00aaff' },
-    REPAIR: { x: 50, y: SURFACE_LEVEL - 1, name: 'REPAIR & ITEMS', color: '#ff9900' }
+    FUEL: { x: 10, y: SURFACE_LEVEL, name: 'FUEL STATION', color: '#00ff00' },
+    SELL: { x: 20, y: SURFACE_LEVEL, name: 'TRADING POST', color: '#ffff00' },
+    UPGRADE: { x: 40, y: SURFACE_LEVEL, name: 'UPGRADE CENTER', color: '#00aaff' },
+    REPAIR: { x: 50, y: SURFACE_LEVEL, name: 'REPAIR & ITEMS', color: '#ff9900' }
 };
 
 // Mineral types
@@ -1416,45 +1416,115 @@ class World {
         ctx.lineTo(ctx.canvas.width, surfaceY);
         ctx.stroke();
 
-        // Draw shops as houses on surface
+        // Draw shops as unique buildings on surface
         for (const [shopType, shop] of Object.entries(SHOPS)) {
             const shopScreenX = shop.x * BLOCK_SIZE - camera.x;
             const shopScreenY = shop.y * BLOCK_SIZE - camera.y;
 
-            // Draw house base (walls)
-            ctx.fillStyle = '#8B4513'; // Brown walls
-            ctx.fillRect(shopScreenX - 20, shopScreenY - 35, 40, 35);
+            if (shopType === 'FUEL') {
+                // FUEL STATION - Gas pump style
+                ctx.fillStyle = '#00ff00'; // Green base
+                ctx.fillRect(shopScreenX - 18, shopScreenY - 30, 36, 30);
 
-            // Draw roof (triangle)
-            ctx.fillStyle = '#654321'; // Dark brown roof
-            ctx.beginPath();
-            ctx.moveTo(shopScreenX - 25, shopScreenY - 35); // Left corner
-            ctx.lineTo(shopScreenX, shopScreenY - 50); // Top peak
-            ctx.lineTo(shopScreenX + 25, shopScreenY - 35); // Right corner
-            ctx.closePath();
-            ctx.fill();
+                // Pump
+                ctx.fillStyle = '#00cc00';
+                ctx.fillRect(shopScreenX - 8, shopScreenY - 25, 16, 20);
 
-            // Draw door
-            ctx.fillStyle = '#654321'; // Dark brown door
-            ctx.fillRect(shopScreenX - 6, shopScreenY - 18, 12, 18);
+                // Pump nozzle
+                ctx.fillStyle = '#000';
+                ctx.fillRect(shopScreenX + 8, shopScreenY - 18, 8, 4);
 
-            // Draw window
-            ctx.fillStyle = '#87CEEB'; // Light blue window
-            ctx.fillRect(shopScreenX - 16, shopScreenY - 28, 8, 8);
-            ctx.fillRect(shopScreenX + 8, shopScreenY - 28, 8, 8);
+                // Sign
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(shopScreenX - 12, shopScreenY - 35, 24, 8);
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 6px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('FUEL', shopScreenX, shopScreenY - 29);
 
-            // Draw sign above door with shop name
-            ctx.fillStyle = shop.color;
-            ctx.fillRect(shopScreenX - 15, shopScreenY - 48, 30, 10);
-            ctx.strokeStyle = '#000';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(shopScreenX - 15, shopScreenY - 48, 30, 10);
+            } else if (shopType === 'SELL') {
+                // TRADING POST - Market stall style
+                ctx.fillStyle = '#ffff00'; // Yellow awning
+                ctx.fillRect(shopScreenX - 22, shopScreenY - 35, 44, 8);
 
-            // Draw shop name on sign
-            ctx.fillStyle = '#000';
-            ctx.font = 'bold 6px monospace';
-            ctx.textAlign = 'center';
-            ctx.fillText(shop.name.split(' ')[0], shopScreenX, shopScreenY - 41);
+                // Stall base
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(shopScreenX - 20, shopScreenY - 27, 40, 27);
+
+                // Counter
+                ctx.fillStyle = '#654321';
+                ctx.fillRect(shopScreenX - 20, shopScreenY - 20, 40, 5);
+
+                // Display boxes
+                ctx.fillStyle = '#CD7F32';
+                ctx.fillRect(shopScreenX - 15, shopScreenY - 15, 8, 8);
+                ctx.fillRect(shopScreenX - 3, shopScreenY - 15, 8, 8);
+                ctx.fillRect(shopScreenX + 9, shopScreenY - 15, 8, 8);
+
+                // Sign
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 6px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('SELL', shopScreenX, shopScreenY - 30);
+
+            } else if (shopType === 'UPGRADE') {
+                // UPGRADE CENTER - Workshop style
+                ctx.fillStyle = '#00aaff'; // Blue walls
+                ctx.fillRect(shopScreenX - 20, shopScreenY - 32, 40, 32);
+
+                // Roof
+                ctx.fillStyle = '#0088cc';
+                ctx.fillRect(shopScreenX - 22, shopScreenY - 35, 44, 5);
+
+                // Large garage door
+                ctx.fillStyle = '#666';
+                ctx.fillRect(shopScreenX - 14, shopScreenY - 24, 28, 24);
+
+                // Door segments
+                ctx.strokeStyle = '#444';
+                ctx.lineWidth = 1;
+                for (let i = 0; i < 4; i++) {
+                    ctx.strokeRect(shopScreenX - 14, shopScreenY - 24 + i * 6, 28, 6);
+                }
+
+                // Sign
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(shopScreenX - 15, shopScreenY - 40, 30, 8);
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 5px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('UPGRADE', shopScreenX, shopScreenY - 34);
+
+            } else if (shopType === 'REPAIR') {
+                // REPAIR SHOP - Tool shop style
+                ctx.fillStyle = '#ff9900'; // Orange walls
+                ctx.fillRect(shopScreenX - 18, shopScreenY - 30, 36, 30);
+
+                // Window/display
+                ctx.fillStyle = '#87CEEB';
+                ctx.fillRect(shopScreenX - 14, shopScreenY - 24, 12, 12);
+                ctx.fillRect(shopScreenX + 2, shopScreenY - 24, 12, 12);
+
+                // Door
+                ctx.fillStyle = '#654321';
+                ctx.fillRect(shopScreenX - 6, shopScreenY - 10, 12, 10);
+
+                // Tools on display (wrench symbol)
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(shopScreenX - 8, shopScreenY - 20);
+                ctx.lineTo(shopScreenX - 4, shopScreenY - 16);
+                ctx.stroke();
+
+                // Sign
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(shopScreenX - 14, shopScreenY - 36, 28, 8);
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 6px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('REPAIR', shopScreenX, shopScreenY - 30);
+            }
         }
 
         // Draw mountain walls/rock in all out-of-bounds visible areas
