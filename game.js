@@ -1577,9 +1577,10 @@ class World {
             // Calculate mountain width based on height (slanted effect)
             let mountainWidth = 0;
             if (y < SURFACE_LEVEL) {
-                // Above surface - mountains slope outward as you go up
-                const heightAboveSurface = SURFACE_LEVEL - y;
-                mountainWidth = Math.floor(heightAboveSurface * 0.3); // Slope factor
+                // Above surface - mountains slope OUTWARD (narrower at top, wider at base)
+                const heightAboveSurface = SURFACE_LEVEL - y; // 0 at surface, 35 at top
+                const maxHeight = 35; // From surface (5) to sky limit (-30)
+                mountainWidth = Math.floor((maxHeight - heightAboveSurface) * 0.3);
             }
 
             // Left side mountain
