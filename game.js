@@ -1002,15 +1002,16 @@ class Player {
                                 this.y += (this.y > blockCenterY ? overlapY : -overlapY);
 
                                 // Only stop downward velocity when landing on top of block
-                                if (this.vy > 0 && this.y > blockCenterY) {
+                                // When landing on top: player y < block center y (player is above block)
+                                if (this.vy > 0 && this.y < blockCenterY) {
                                     this.vy = 0;
                                     // Damage on fast collisions when landing
                                     if (!collided && speed > 0.6) {
                                         this.hull -= speed * 0.3;
                                         collided = true;
                                     }
-                                } else if (this.vy < 0 && this.y < blockCenterY) {
-                                    // Hitting ceiling from below
+                                } else if (this.vy < 0 && this.y > blockCenterY) {
+                                    // Hitting ceiling from below: player y > block center y (player is below block)
                                     this.vy = 0;
                                 }
                             }
