@@ -1082,8 +1082,8 @@ class Player {
     }
 
     applyUpgrades() {
-        // Engine
-        this.speed = 0.03 + (this.upgrades.engine || 0) * 0.015;
+        // Engine - reduced upgrade effect
+        this.speed = 0.03 + (this.upgrades.engine || 0) * 0.006;
 
         // Drill
         this.drillPower = 1 + (this.upgrades.drill || 0);
