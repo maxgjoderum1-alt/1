@@ -540,8 +540,8 @@ class Game {
         // Render player
         this.player.render(this.ctx, this.camera);
 
-        // Draw bomb trajectory preview (if player has arms and bombs)
-        if (this.player.upgrades.arms && this.player.bombs > 0) {
+        // Draw bomb trajectory preview (if player has arms, bombs, and slot 1 selected)
+        if (this.player.upgrades.arms && this.player.bombs > 0 && this.player.selectedSlot === 1) {
             // Calculate throw velocity (same logic as throwBomb)
             const minThrowSpeed = 0.3;
             let throwVx = this.player.vx * 5;
@@ -606,37 +606,55 @@ class Game {
             this.ctx.setLineDash([]); // Reset to solid line
         }
 
-        // Render hotbar (bottom center of screen)
-        if (this.player.upgrades.arms && this.player.bombs > 0) {
-            const hotbarX = this.width / 2 - 15;
-            const hotbarY = this.height - 50;
+        // Render hotbar with 3 slots (bottom center of screen)
+        const slotSize = 30;
+        const slotSpacing = 5;
+        const hotbarStartX = this.width / 2 - (slotSize * 3 + slotSpacing * 2) / 2;
+        const hotbarY = this.height - 50;
 
-            // Hotbar background
+        for (let slot = 1; slot <= 3; slot++) {
+            const slotX = hotbarStartX + (slot - 1) * (slotSize + slotSpacing);
+
+            // Slot background
             this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            this.ctx.fillRect(hotbarX, hotbarY, 30, 30);
+            this.ctx.fillRect(slotX, hotbarY, slotSize, slotSize);
 
-            // Hotbar border
-            this.ctx.strokeStyle = '#888';
-            this.ctx.lineWidth = 2;
-            this.ctx.strokeRect(hotbarX, hotbarY, 30, 30);
+            // Slot border (highlighted if selected)
+            if (this.player.selectedSlot === slot) {
+                this.ctx.strokeStyle = '#fff';
+                this.ctx.lineWidth = 3;
+            } else {
+                this.ctx.strokeStyle = '#888';
+                this.ctx.lineWidth = 2;
+            }
+            this.ctx.strokeRect(slotX, hotbarY, slotSize, slotSize);
 
-            // Draw bomb icon in hotbar
-            this.ctx.fillStyle = '#000';
-            this.ctx.beginPath();
-            this.ctx.arc(hotbarX + 15, hotbarY + 15, 6, 0, Math.PI * 2);
-            this.ctx.fill();
-
-            // Draw fuse on bomb icon
-            this.ctx.fillStyle = '#ff0000';
-            this.ctx.beginPath();
-            this.ctx.arc(hotbarX + 11, hotbarY + 11, 2, 0, Math.PI * 2);
-            this.ctx.fill();
-
-            // Draw bomb count
-            this.ctx.fillStyle = '#fff';
+            // Draw slot number
+            this.ctx.fillStyle = '#888';
             this.ctx.font = 'bold 10px monospace';
-            this.ctx.textAlign = 'right';
-            this.ctx.fillText(this.player.bombs, hotbarX + 27, hotbarY + 27);
+            this.ctx.textAlign = 'left';
+            this.ctx.fillText(slot, slotX + 3, hotbarY + 10);
+
+            // Draw bomb icon in slot 1 if player has arms and bombs
+            if (slot === 1 && this.player.upgrades.arms && this.player.bombs > 0) {
+                // Draw bomb icon
+                this.ctx.fillStyle = '#000';
+                this.ctx.beginPath();
+                this.ctx.arc(slotX + 15, hotbarY + 15, 6, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                // Draw fuse
+                this.ctx.fillStyle = '#ff0000';
+                this.ctx.beginPath();
+                this.ctx.arc(slotX + 11, hotbarY + 11, 2, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                // Draw bomb count
+                this.ctx.fillStyle = '#fff';
+                this.ctx.font = 'bold 10px monospace';
+                this.ctx.textAlign = 'right';
+                this.ctx.fillText(this.player.bombs, slotX + 27, hotbarY + 27);
+            }
         }
     }
 
@@ -1006,6 +1024,7 @@ class Player {
         this.lastDrillTime = 0;
         this.drillCooldown = 300; // 300ms between drills
         this.lastDirection = 1; // Track last horizontal direction (1 = right, -1 = left)
+        this.selectedSlot = 1; // Hotbar slot selection (1, 2, or 3)
 
         this.availableUpgrades = [
             { id: 'drill', name: 'Drill Power', description: 'Mine harder blocks (required for deep mining)', baseCost: 100, maxLevel: 5 },
@@ -1046,9 +1065,25 @@ class Player {
             isThrusting = true; // Drilling also consumes fuel
         }
 
-        // Throw bomb with spacebar (requires arms upgrade)
+        // Hotbar slot selection
+        if (keys['1']) {
+            this.selectedSlot = 1;
+            keys['1'] = false;
+        }
+        if (keys['2']) {
+            this.selectedSlot = 2;
+            keys['2'] = false;
+        }
+        if (keys['3']) {
+            this.selectedSlot = 3;
+            keys['3'] = false;
+        }
+
+        // Throw bomb with spacebar (requires arms upgrade and slot 1 selected)
         if (keys[' ']) {
-            this.throwBomb(game);
+            if (this.selectedSlot === 1) {
+                this.throwBomb(game);
+            }
             keys[' '] = false;
         }
 
@@ -1499,7 +1534,8 @@ class Player {
             upgrades: this.upgrades,
             bombs: this.bombs,
             maxBombs: this.maxBombs,
-            lastDirection: this.lastDirection
+            lastDirection: this.lastDirection,
+            selectedSlot: this.selectedSlot
         };
     }
 
