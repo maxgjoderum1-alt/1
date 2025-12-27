@@ -108,11 +108,20 @@ class Bomb {
         // Apply horizontal velocity
         this.x += this.vx;
 
-        // Check horizontal collision (only within playable world)
+        // Check boundaries - prevent bomb from going outside playable area
+        if (this.x < 0.5) {
+            this.x = 0.5;
+            this.vx = 0;
+        }
+        if (this.x > WORLD_WIDTH - 0.5) {
+            this.x = WORLD_WIDTH - 0.5;
+            this.vx = 0;
+        }
+
+        // Check horizontal collision with blocks
         let blockX = Math.floor(this.x);
         let blockY = Math.floor(this.y);
 
-        // Only check collision if within world boundaries
         if (blockX >= 0 && blockX < WORLD_WIDTH && blockY >= 0 && blockY < WORLD_HEIGHT) {
             let block = world.getBlock(blockX, blockY);
             if (block && block.type !== BLOCK_TYPES.AIR) {
