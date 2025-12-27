@@ -735,20 +735,20 @@ class Player {
         // Track if thrusting (for fuel consumption)
         let isThrusting = false;
 
-        // Handle input with momentum
-        if (keys['ArrowLeft']) {
+        // Handle input with momentum (supports both Arrow keys and WASD)
+        if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
             this.vx -= this.speed;
             isThrusting = true;
         }
-        if (keys['ArrowRight']) {
+        if (keys['ArrowRight'] || keys['d'] || keys['D']) {
             this.vx += this.speed;
             isThrusting = true;
         }
-        if (keys['ArrowUp']) {
+        if (keys['ArrowUp'] || keys['w'] || keys['W']) {
             this.vy -= this.speed * 1.5;
             isThrusting = true;
         }
-        if (keys['ArrowDown']) {
+        if (keys['ArrowDown'] || keys['s'] || keys['S']) {
             this.drill(world, game);
         }
 
