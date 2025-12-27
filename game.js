@@ -108,30 +108,36 @@ class Bomb {
         // Apply horizontal velocity
         this.x += this.vx;
 
-        // Check horizontal collision
+        // Check horizontal collision (only within playable world)
         let blockX = Math.floor(this.x);
         let blockY = Math.floor(this.y);
-        let block = world.getBlock(blockX, blockY);
 
-        if (block && block.type !== BLOCK_TYPES.AIR) {
-            // Hit wall horizontally, revert x and stop horizontal movement
-            this.x = oldX;
-            this.vx = 0;
+        // Only check collision if within world boundaries
+        if (blockX >= 0 && blockX < WORLD_WIDTH && blockY >= 0 && blockY < WORLD_HEIGHT) {
+            let block = world.getBlock(blockX, blockY);
+            if (block && block.type !== BLOCK_TYPES.AIR) {
+                // Hit wall horizontally, revert x and stop horizontal movement
+                this.x = oldX;
+                this.vx = 0;
+            }
         }
 
         // Apply vertical velocity
         this.y += this.vy;
 
-        // Check vertical collision
+        // Check vertical collision (only within playable world)
         blockX = Math.floor(this.x);
         blockY = Math.floor(this.y);
-        block = world.getBlock(blockX, blockY);
 
-        if (block && block.type !== BLOCK_TYPES.AIR) {
-            // Hit ground, push bomb to top of block
-            this.y = Math.floor(this.y);
-            this.vy = 0;
-            this.vx *= 0.8; // Friction when on ground
+        // Only check collision if within world boundaries
+        if (blockX >= 0 && blockX < WORLD_WIDTH && blockY >= 0 && blockY < WORLD_HEIGHT) {
+            let block = world.getBlock(blockX, blockY);
+            if (block && block.type !== BLOCK_TYPES.AIR) {
+                // Hit ground, push bomb to top of block
+                this.y = Math.floor(this.y);
+                this.vy = 0;
+                this.vx *= 0.8; // Friction when on ground
+            }
         }
     }
 
