@@ -190,7 +190,7 @@ class Game {
 
     newGame() {
         this.world = new World();
-        this.player = new Player(WORLD_WIDTH / 2, SURFACE_LEVEL - 2);
+        this.player = new Player(WORLD_WIDTH / 2, SURFACE_LEVEL + 10); // Start underground
         this.gameOver = false;
         this.victory = false;
         this.running = true;
@@ -252,8 +252,9 @@ class Game {
             }
         }
 
-        // Check for surface landing
-        if (this.player.y < SURFACE_LEVEL && !this.inShop) {
+        // Check for surface landing - only open shop if player is on surface AND not moving much
+        const speed = Math.sqrt(this.player.vx * this.player.vx + this.player.vy * this.player.vy);
+        if (this.player.y <= SURFACE_LEVEL - 1 && speed < 0.2 && !this.inShop) {
             this.openShop();
         }
 
@@ -532,7 +533,7 @@ class Game {
 // PLAYER CLASS
 // ========================================
 class Player {
-    constructor(x = WORLD_WIDTH / 2, y = SURFACE_LEVEL - 2) {
+    constructor(x = WORLD_WIDTH / 2, y = SURFACE_LEVEL + 10) {
         this.x = x;
         this.y = y;
         this.vx = 0;
