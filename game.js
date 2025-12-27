@@ -147,7 +147,7 @@ class Game {
         this.particles = [];
         this.audio = new AudioSystem();
         this.lastWarningTime = 0;
-        this.shopClosedTime = 0; // Prevent shop from reopening immediately
+        this.hasLeftShopArea = true; // Track if player has moved away from shop
 
         this.setupEventListeners();
         this.checkSaveGame();
@@ -264,15 +264,32 @@ class Game {
 
         // Check proximity to shops - only when on surface and stationary
         const speed = Math.sqrt(this.player.vx * this.player.vx + this.player.vy * this.player.vy);
-        const now = Date.now();
-        if (this.player.y <= SURFACE_LEVEL && speed < 0.2 && !this.inShop && (now - this.shopClosedTime > 500)) {
-            // Check each shop (only if 500ms have passed since closing)
+
+        if (this.player.y <= SURFACE_LEVEL && !this.inShop) {
+            // Check if player is near any shop
+            let nearAnyShop = false;
+            let nearestShop = null;
+            let nearestDistance = Infinity;
+
             for (const [shopType, shop] of Object.entries(SHOPS)) {
                 const distance = Math.abs(this.player.x - shop.x);
                 if (distance < 2) {
-                    this.openShop(shopType);
-                    break;
+                    nearAnyShop = true;
+                    if (distance < nearestDistance) {
+                        nearestDistance = distance;
+                        nearestShop = shopType;
+                    }
                 }
+            }
+
+            // If player has moved away from all shops, mark as left shop area
+            if (!nearAnyShop) {
+                this.hasLeftShopArea = true;
+            }
+
+            // Only open shop if player is stationary and has left shop area since last visit
+            if (nearestShop && speed < 0.2 && this.hasLeftShopArea) {
+                this.openShop(nearestShop);
             }
         }
 
@@ -428,7 +445,7 @@ class Game {
     closeShop() {
         this.inShop = false;
         this.player.isOnSurface = false;
-        this.shopClosedTime = Date.now(); // Prevent immediate reopening
+        this.hasLeftShopArea = false; // Player must move away before reopening
         document.getElementById('shop-overlay').style.display = 'none';
         this.saveGame();
     }
