@@ -823,7 +823,7 @@ class Player {
 
         // Fuel consumption - when using WASD/arrow keys
         if (isThrusting) {
-            const fuelConsumption = 0.15 + Math.abs(this.vx) * 0.02 + Math.abs(this.vy) * 0.02;
+            const fuelConsumption = 0.10 + Math.abs(this.vx) * 0.015 + Math.abs(this.vy) * 0.015;
             this.fuel = Math.max(0, this.fuel - fuelConsumption);
         }
 
@@ -1326,10 +1326,19 @@ class World {
         for (let y = Math.max(0, startY); y < Math.min(WORLD_HEIGHT, endY); y++) {
             for (let x = Math.max(0, startX); x < Math.min(WORLD_WIDTH, endX); x++) {
                 const block = this.getBlock(x, y);
-                if (!block || block.type === BLOCK_TYPES.AIR) continue;
 
                 const screenX = x * BLOCK_SIZE - camera.x;
                 const screenY = y * BLOCK_SIZE - camera.y;
+
+                // Render sky (air above surface) as light blue
+                if ((!block || block.type === BLOCK_TYPES.AIR) && y < SURFACE_LEVEL) {
+                    ctx.fillStyle = '#87CEEB'; // Light blue sky
+                    ctx.fillRect(screenX, screenY, BLOCK_SIZE, BLOCK_SIZE);
+                    continue;
+                }
+
+                // Skip underground air (caves)
+                if (!block || block.type === BLOCK_TYPES.AIR) continue;
 
                 // Determine color
                 let color;
