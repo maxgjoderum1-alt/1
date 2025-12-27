@@ -937,8 +937,8 @@ class Player {
                                     this.x += (this.x > bx ? overlapX : -overlapX);
                                     this.vx *= -0.3; // Small bounce
                                 } else {
-                                    // Push vertically (FIXED: inverted logic)
-                                    this.y += (this.y > by ? -overlapY : overlapY);
+                                    // Push vertically (same logic as horizontal)
+                                    this.y += (this.y > by ? overlapY : -overlapY);
                                     this.vy *= -0.3; // Small bounce
                                 }
 
