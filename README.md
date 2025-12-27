@@ -2,6 +2,8 @@
 
 A browser-based mining game inspired by the classic flash game Motherload. Dig deep into the planet, collect valuable minerals, upgrade your vehicle, and discover the secrets buried at the core.
 
+**✨ IMPROVED VERSION** - Now with enhanced mechanics, visual effects, audio feedback, and better balance!
+
 ## 🎮 How to Play
 
 1. Open `index.html` in a web browser
@@ -109,14 +111,46 @@ Reach a depth of 180 meters (900m displayed) to discover the alien civilization 
 ✅ Fuel, hull, heat, and cargo management
 ✅ Procedurally generated terrain
 ✅ 8 different mineral types
-✅ Full upgrade system
-✅ Bomb mechanics
+✅ Full upgrade system (7 categories)
+✅ Bomb mechanics with auto-restock
 ✅ Risk/reward depth system
 ✅ Surface base with shop
 ✅ Auto-save functionality
 ✅ Game over and victory conditions
 ✅ Pixel-art graphics
 ✅ Flash-era visual style
+
+## ✨ Enhanced Features
+
+🎨 **Visual Polish**
+- Particle effects when mining blocks
+- Explosion particles for bombs
+- Heat glow effect on vehicle
+- Damage flash animation
+- Cargo weight indicator
+- Mineral color-coded blocks
+
+🔊 **Audio Feedback**
+- Drilling sound effects
+- Mineral collection chimes
+- Bomb explosions
+- Warning beeps for low fuel/overheat
+
+⚠️ **Improved Warnings**
+- Low fuel alert
+- Cargo full notification
+- Overheating warning
+- Real-time status indicators
+- Bomb counter display
+
+⚙️ **Gameplay Improvements**
+- Sideways drilling capability
+- Better collision detection
+- Improved heat mechanics
+- Balanced mineral distribution
+- Smarter cargo management
+- Starting money ($50)
+- Enhanced upgrade progression
 
 ## 🎨 Design Philosophy
 
@@ -125,5 +159,25 @@ The game captures the essence of the original Motherload:
 - **Risk vs Reward** - Going deeper = better minerals but more danger
 - **Progression Loop** - Mine → Sell → Upgrade → Mine Deeper
 - **Strategic Planning** - When to return, what to upgrade, where to dig
+
+## 🔧 Bug Fixes & Improvements
+
+**Fixed Issues:**
+- ✅ Bomb restocking now works correctly (restocks at shop, not during use)
+- ✅ Heat mechanics properly balanced (depth heat vs cooling)
+- ✅ Collision damage only on high-speed impacts
+- ✅ Mineral generation fixed (proper depth-based distribution)
+- ✅ Cargo overflow handled gracefully
+- ✅ Sideways drilling added for better mobility
+- ✅ Fuel consumption balanced
+- ✅ Upgrade costs reordered by importance
+
+**Balance Changes:**
+- Heat gain reduced from 0.02 to 0.015 per depth unit
+- Fuel consumption reduced from 0.05 to 0.04 base
+- Drilling fuel cost reduced from 0.2 to 0.15
+- Shop heat reduction increased from 20 to 30
+- Collision damage now speed-based (0.5x speed when > 1.2)
+- Starting money increased to $50
 
 Enjoy your mining adventure! 🚀⛏️

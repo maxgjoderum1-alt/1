@@ -189,6 +189,37 @@ button:active {
     color: #888;
 }
 
+.bombs-display {
+    font-size: 14px;
+    color: #ff9900;
+    margin-left: 20px;
+}
+
+.bombs-label {
+    font-size: 16px;
+}
+
+#warnings-container {
+    position: absolute;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.warning-message {
+    background: rgba(255, 0, 0, 0.8);
+    color: #fff;
+    padding: 10px 20px;
+    border: 2px solid #ff0000;
+    font-weight: bold;
+    text-align: center;
+    animation: warning-pulse 0.5s infinite;
+}
+
 /* SHOP OVERLAY */
 #shop-overlay {
     position: absolute;

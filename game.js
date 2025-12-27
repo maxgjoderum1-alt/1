@@ -31,6 +31,92 @@ const BLOCK_TYPES = {
 };
 
 // ========================================
+// PARTICLE SYSTEM
+// ========================================
+class Particle {
+    constructor(x, y, color, vx, vy, life) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.vx = vx;
+        this.vy = vy;
+        this.life = life;
+        this.maxLife = life;
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.05; // Gravity
+        this.life--;
+    }
+
+    render(ctx, camera) {
+        const screenX = this.x - camera.x;
+        const screenY = this.y - camera.y;
+        const alpha = this.life / this.maxLife;
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = this.color;
+        ctx.fillRect(screenX, screenY, 2, 2);
+        ctx.globalAlpha = 1;
+    }
+}
+
+// ========================================
+// AUDIO SYSTEM
+// ========================================
+class AudioSystem {
+    constructor() {
+        this.audioContext = null;
+        this.enabled = true;
+        this.initAudio();
+    }
+
+    initAudio() {
+        try {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) {
+            this.enabled = false;
+        }
+    }
+
+    playSound(frequency, duration, type = 'sine') {
+        if (!this.enabled || !this.audioContext) return;
+
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+
+        oscillator.frequency.value = frequency;
+        oscillator.type = type;
+
+        gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
+
+        oscillator.start(this.audioContext.currentTime);
+        oscillator.stop(this.audioContext.currentTime + duration);
+    }
+
+    playDrill() {
+        this.playSound(100 + Math.random() * 50, 0.1, 'sawtooth');
+    }
+
+    playCollect() {
+        this.playSound(400, 0.1, 'sine');
+    }
+
+    playBomb() {
+        this.playSound(50, 0.3, 'sawtooth');
+    }
+
+    playWarning() {
+        this.playSound(800, 0.1, 'square');
+    }
+}
+
+// ========================================
 // GAME STATE
 // ========================================
 class Game {
@@ -50,6 +136,9 @@ class Game {
         this.inShop = false;
         this.gameOver = false;
         this.victory = false;
+        this.particles = [];
+        this.audio = new AudioSystem();
+        this.lastWarningTime = 0;
 
         this.setupEventListeners();
         this.checkSaveGame();
@@ -138,7 +227,15 @@ class Game {
     update() {
         if (this.inShop) return;
 
-        this.player.update(this.keys, this.world);
+        this.player.update(this.keys, this.world, this);
+
+        // Update particles
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            this.particles[i].update();
+            if (this.particles[i].life <= 0) {
+                this.particles.splice(i, 1);
+            }
+        }
 
         // Check for surface landing
         if (this.player.y < SURFACE_LEVEL && !this.inShop) {
@@ -167,12 +264,23 @@ class Game {
         }
     }
 
+    spawnParticles(x, y, color, count = 5) {
+        for (let i = 0; i < count; i++) {
+            const vx = (Math.random() - 0.5) * 2;
+            const vy = (Math.random() - 0.5) * 2 - 1;
+            this.particles.push(new Particle(x * BLOCK_SIZE, y * BLOCK_SIZE, color, vx, vy, 30));
+        }
+    }
+
     render() {
         this.ctx.fillStyle = '#000';
         this.ctx.fillRect(0, 0, this.width, this.height);
 
         // Render world
         this.world.render(this.ctx, this.camera);
+
+        // Render particles
+        this.particles.forEach(particle => particle.render(this.ctx, this.camera));
 
         // Render player
         this.player.render(this.ctx, this.camera);
@@ -219,6 +327,54 @@ class Game {
         // Depth
         const depth = Math.max(0, Math.floor((this.player.y - SURFACE_LEVEL) * 5));
         document.getElementById('depth-value').textContent = depth + 'm';
+
+        // Bombs
+        document.getElementById('bombs-value').textContent = this.player.bombs;
+
+        // Warnings
+        this.updateWarnings();
+    }
+
+    updateWarnings() {
+        const warningsContainer = document.getElementById('warnings-container');
+        warningsContainer.innerHTML = '';
+
+        const now = Date.now();
+        let shouldPlayWarning = false;
+
+        // Low fuel warning
+        if (this.player.fuel < 20 && this.player.fuel > 0) {
+            const warning = document.createElement('div');
+            warning.className = 'warning-message';
+            warning.textContent = '⚠️ LOW FUEL ⚠️';
+            warningsContainer.appendChild(warning);
+            shouldPlayWarning = true;
+        }
+
+        // Cargo full warning
+        if (this.player.cargoWeight >= this.player.maxCargo * 0.9) {
+            const warning = document.createElement('div');
+            warning.className = 'warning-message';
+            warning.textContent = '⚠️ CARGO FULL ⚠️';
+            warning.style.background = 'rgba(255, 165, 0, 0.8)';
+            warning.style.borderColor = '#ff9900';
+            warningsContainer.appendChild(warning);
+        }
+
+        // Overheat warning
+        if (this.player.heat >= this.player.maxHeat * 0.8) {
+            const warning = document.createElement('div');
+            warning.className = 'warning-message';
+            warning.textContent = '⚠️ OVERHEATING ⚠️';
+            warningsContainer.appendChild(warning);
+            shouldPlayWarning = true;
+        }
+
+        // Play warning sound occasionally
+        if (shouldPlayWarning && now - this.lastWarningTime > 2000) {
+            this.audio.playWarning();
+            this.lastWarningTime = now;
+        }
     }
 
     openShop() {
@@ -229,7 +385,10 @@ class Game {
         this.player.isOnSurface = true;
 
         // Cool down heat when on surface
-        this.player.heat = Math.max(0, this.player.heat - 20);
+        this.player.heat = Math.max(0, this.player.heat - 30);
+
+        // Restock bombs
+        this.player.bombs = this.player.maxBombs;
 
         document.getElementById('shop-overlay').style.display = 'flex';
         this.updateShopUI();
@@ -327,6 +486,7 @@ class Game {
             this.player.money -= cost;
             this.player.upgrades[upgradeId] = level + 1;
             this.player.applyUpgrades();
+            this.audio.playCollect();
             this.updateShopUI();
         }
     }
@@ -374,7 +534,7 @@ class Player {
         this.cargoWeight = 0;
         this.maxCargo = 50;
 
-        this.money = 0;
+        this.money = 50; // Starting money for first upgrade
         this.upgrades = {};
         this.isOnSurface = false;
 
@@ -386,17 +546,17 @@ class Player {
         this.maxBombs = 3;
 
         this.availableUpgrades = [
-            { id: 'engine', name: 'Engine', description: 'Faster movement', baseCost: 50, maxLevel: 5 },
-            { id: 'drill', name: 'Drill', description: 'Mine harder blocks', baseCost: 100, maxLevel: 5 },
-            { id: 'fuel_tank', name: 'Fuel Tank', description: 'More fuel capacity', baseCost: 75, maxLevel: 5 },
-            { id: 'cargo', name: 'Cargo Bay', description: 'Carry more minerals', baseCost: 60, maxLevel: 5 },
-            { id: 'hull', name: 'Hull Armor', description: 'More durability', baseCost: 80, maxLevel: 5 },
-            { id: 'cooling', name: 'Cooling System', description: 'Better heat management', baseCost: 120, maxLevel: 5 },
-            { id: 'bombs', name: 'Bomb Capacity', description: 'Carry more bombs', baseCost: 100, maxLevel: 3 }
+            { id: 'drill', name: 'Drill Power', description: 'Mine harder blocks (required for deep mining)', baseCost: 100, maxLevel: 5 },
+            { id: 'cargo', name: 'Cargo Bay', description: 'Carry more minerals', baseCost: 50, maxLevel: 5 },
+            { id: 'fuel_tank', name: 'Fuel Tank', description: 'More fuel capacity', baseCost: 80, maxLevel: 5 },
+            { id: 'engine', name: 'Engine', description: 'Faster movement', baseCost: 60, maxLevel: 5 },
+            { id: 'hull', name: 'Hull Armor', description: 'More durability', baseCost: 90, maxLevel: 5 },
+            { id: 'cooling', name: 'Cooling System', description: 'Essential for deep mining', baseCost: 150, maxLevel: 5 },
+            { id: 'bombs', name: 'Bomb Capacity', description: 'Carry more bombs', baseCost: 120, maxLevel: 3 }
         ];
     }
 
-    update(keys, world) {
+    update(keys, world, game) {
         // Apply gravity
         this.vy += 0.02;
 
@@ -411,7 +571,7 @@ class Player {
             this.vy -= this.speed * 1.5;
         }
         if (keys['ArrowDown']) {
-            this.drill(world);
+            this.drill(world, game);
         }
 
         // Drop minerals
@@ -422,7 +582,7 @@ class Player {
 
         // Use bomb
         if (keys['b'] || keys['B']) {
-            this.useBomb(world);
+            this.useBomb(world, game);
             keys['b'] = false;
             keys['B'] = false;
         }
@@ -450,26 +610,47 @@ class Player {
         this.handleCollisions(world);
 
         // Fuel consumption
-        const fuelConsumption = 0.05 + Math.abs(this.vx) * 0.01 + Math.abs(this.vy) * 0.01;
+        const fuelConsumption = 0.04 + Math.abs(this.vx) * 0.01 + Math.abs(this.vy) * 0.01;
         this.fuel = Math.max(0, this.fuel - fuelConsumption);
 
-        // Heat mechanics
+        // Heat mechanics - heat increases with depth
         const depth = Math.max(0, this.y - SURFACE_LEVEL);
-        const depthHeat = depth * 0.02;
-        this.heat = Math.min(this.maxHeat, this.heat + depthHeat - this.cooling);
+        const depthHeat = depth * 0.015; // Heat gain from depth
 
-        if (this.heat >= this.maxHeat) {
-            this.hull -= 0.5; // Overheat damage
-        } else {
-            this.heat = Math.max(0, this.heat - this.cooling);
+        // Natural cooling happens continuously
+        const naturalCooling = this.cooling * 0.3;
+
+        // Net heat change
+        const heatChange = depthHeat - naturalCooling;
+        this.heat = Math.max(0, Math.min(this.maxHeat, this.heat + heatChange));
+
+        // Overheat damage
+        if (this.heat >= this.maxHeat * 0.95) {
+            this.hull -= 0.8; // Severe overheat damage
+        } else if (this.heat >= this.maxHeat * 0.8) {
+            this.hull -= 0.3; // Mild overheat damage
         }
     }
 
-    drill(world) {
+    drill(world, game) {
         const blockX = Math.floor(this.x);
         const blockY = Math.floor(this.y + 1);
 
-        if (blockY >= 0 && blockY < WORLD_HEIGHT) {
+        // Also check blocks to the sides if moving horizontally
+        const sideBlockX = Math.floor(this.x + Math.sign(this.vx) * 0.6);
+        const sideBlockY = Math.floor(this.y);
+
+        // Try drilling down first
+        let drilled = this.tryDrillBlock(world, game, blockX, blockY, 0, 0.1);
+
+        // If moving sideways, also drill in that direction
+        if (!drilled && Math.abs(this.vx) > 0.3) {
+            drilled = this.tryDrillBlock(world, game, sideBlockX, sideBlockY, Math.sign(this.vx) * 0.05, 0);
+        }
+    }
+
+    tryDrillBlock(world, game, blockX, blockY, vxPush, vyPush) {
+        if (blockY >= SURFACE_LEVEL && blockY < WORLD_HEIGHT && blockX >= 0 && blockX < WORLD_WIDTH) {
             const block = world.getBlock(blockX, blockY);
 
             if (block && block.type !== BLOCK_TYPES.AIR && block.type !== BLOCK_TYPES.UNBREAKABLE) {
@@ -477,25 +658,42 @@ class Player {
 
                 if (this.drillPower >= hardness) {
                     // Mine the block
-                    this.vy += 0.1; // Push downward
-                    this.heat += 2; // Drilling generates heat
-                    this.fuel -= 0.2; // Drilling uses fuel
+                    this.vx += vxPush;
+                    this.vy += vyPush;
+                    this.heat += 1.5; // Drilling generates heat
+                    this.fuel -= 0.15; // Drilling uses fuel
+
+                    // Visual and audio feedback
+                    const color = block.mineral ? block.mineral.color : '#654321';
+                    game.spawnParticles(blockX, blockY, color, 3);
+                    if (Math.random() < 0.2) game.audio.playDrill();
 
                     // Collect mineral
-                    if (block.mineral && this.cargoWeight < this.maxCargo) {
-                        this.cargo.push(block.mineral);
-                        this.cargoWeight += block.mineral.weight;
+                    if (block.mineral) {
+                        if (this.cargoWeight + block.mineral.weight <= this.maxCargo) {
+                            this.cargo.push(block.mineral);
+                            this.cargoWeight += block.mineral.weight;
+                            if (block.mineral.value > 10 && Math.random() < 0.3) {
+                                game.audio.playCollect();
+                            }
+                        }
+                        // If cargo full, mineral is lost (realistic)
                     }
 
                     world.setBlock(blockX, blockY, BLOCK_TYPES.AIR);
+                    return true;
                 }
             }
         }
+        return false;
     }
 
     handleCollisions(world) {
         const blockX = Math.floor(this.x);
         const blockY = Math.floor(this.y);
+
+        let collided = false;
+        const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
 
         // Check surrounding blocks
         for (let dx = -1; dx <= 1; dx++) {
@@ -507,17 +705,25 @@ class Player {
                     const block = world.getBlock(bx, by);
 
                     if (block && block.type !== BLOCK_TYPES.AIR) {
-                        // Simple collision response
-                        if (Math.abs(this.vx) > 1 || Math.abs(this.vy) > 1) {
-                            this.hull -= 0.5; // Collision damage
-                        }
+                        // Check if player overlaps with block
+                        const distX = Math.abs(this.x - bx);
+                        const distY = Math.abs(this.y - by);
 
-                        // Push player away
-                        if (Math.abs(this.x - bx) < 0.5 && Math.abs(this.y - by) < 0.5) {
-                            this.x -= dx * 0.1;
-                            this.y -= dy * 0.1;
-                            this.vx *= -0.5;
-                            this.vy *= -0.5;
+                        if (distX < 0.6 && distY < 0.6) {
+                            // Push player away from block
+                            if (distX > distY) {
+                                this.x += (this.x > bx ? 0.05 : -0.05);
+                                this.vx *= -0.3;
+                            } else {
+                                this.y += (this.y > by ? 0.05 : -0.05);
+                                this.vy *= -0.3;
+                            }
+
+                            if (!collided && speed > 1.2) {
+                                // Only damage on high-speed collisions
+                                this.hull -= speed * 0.5;
+                                collided = true;
+                            }
                         }
                     }
                 }
@@ -525,9 +731,10 @@ class Player {
         }
     }
 
-    useBomb(world) {
+    useBomb(world, game) {
         if (this.bombs > 0) {
             this.bombs--;
+            game.audio.playBomb();
 
             const bombX = Math.floor(this.x);
             const bombY = Math.floor(this.y);
@@ -539,19 +746,16 @@ class Player {
                         const bx = bombX + dx;
                         const by = bombY + dy;
 
-                        if (by >= SURFACE_LEVEL && by < WORLD_HEIGHT) {
+                        if (by >= SURFACE_LEVEL && by < WORLD_HEIGHT && bx >= 0 && bx < WORLD_WIDTH) {
                             const block = world.getBlock(bx, by);
                             if (block && block.type !== BLOCK_TYPES.UNBREAKABLE) {
+                                // Create explosion particles
+                                game.spawnParticles(bx, by, '#ff6600', 5);
                                 world.setBlock(bx, by, BLOCK_TYPES.AIR);
                             }
                         }
                     }
                 }
-            }
-
-            // Restock bombs on surface
-            if (this.isOnSurface) {
-                this.bombs = this.maxBombs;
             }
         }
     }
@@ -599,9 +803,25 @@ class Player {
         const screenX = this.x * BLOCK_SIZE - camera.x;
         const screenY = this.y * BLOCK_SIZE - camera.y;
 
-        // Draw vehicle
-        ctx.fillStyle = '#ffaa00';
+        // Flash red when damaged
+        const hullPercent = this.hull / this.maxHull;
+        let vehicleColor = '#ffaa00';
+        if (hullPercent < 0.3 && Math.floor(Date.now() / 200) % 2 === 0) {
+            vehicleColor = '#ff5500';
+        }
+
+        // Draw vehicle body
+        ctx.fillStyle = vehicleColor;
         ctx.fillRect(screenX - 10, screenY - 10, 20, 20);
+
+        // Heat glow effect
+        if (this.heat > this.maxHeat * 0.5) {
+            const heatAlpha = (this.heat / this.maxHeat) * 0.5;
+            ctx.globalAlpha = heatAlpha;
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(screenX - 12, screenY - 12, 24, 24);
+            ctx.globalAlpha = 1;
+        }
 
         // Draw drill
         ctx.fillStyle = '#888';
@@ -611,6 +831,13 @@ class Player {
         ctx.fillStyle = '#00aaff';
         ctx.fillRect(screenX - 6, screenY - 6, 4, 4);
         ctx.fillRect(screenX + 2, screenY - 6, 4, 4);
+
+        // Draw cargo indicator
+        if (this.cargo.length > 0) {
+            const cargoPercent = this.cargoWeight / this.maxCargo;
+            ctx.fillStyle = `rgba(255, 255, 0, ${cargoPercent})`;
+            ctx.fillRect(screenX - 4, screenY, 8, 4);
+        }
     }
 
     getSaveData() {
@@ -695,23 +922,56 @@ class World {
     generateMineral(depth) {
         const rand = Math.random();
 
-        // Dirt is most common
-        if (rand < 0.4) {
-            return MINERALS.DIRT;
+        // Define mineral probability ranges based on depth
+        // Deeper = better minerals more common
+
+        // Very shallow (0-20)
+        if (depth < 20) {
+            if (rand < 0.9) return MINERALS.DIRT;
+            return MINERALS.COAL;
         }
 
-        // Depth affects mineral rarity
-        const depthFactor = depth / WORLD_HEIGHT;
+        // Shallow (20-40)
+        if (depth < 40) {
+            if (rand < 0.6) return MINERALS.DIRT;
+            if (rand < 0.85) return MINERALS.COAL;
+            return MINERALS.COPPER;
+        }
 
-        if (depth > 10 && rand < 0.6) return MINERALS.COAL;
-        if (depth > 20 && rand < 0.7) return MINERALS.COPPER;
-        if (depth > 40 && rand < 0.8) return MINERALS.IRON;
-        if (depth > 60 && rand < 0.85) return MINERALS.SILVER;
-        if (depth > 80 && rand < 0.9) return MINERALS.GOLD;
-        if (depth > 100 && rand < 0.93) return MINERALS.DIAMOND;
-        if (depth > 140 && rand < 0.95) return MINERALS.ALIEN;
+        // Medium depth (40-70)
+        if (depth < 70) {
+            if (rand < 0.4) return MINERALS.DIRT;
+            if (rand < 0.65) return MINERALS.COAL;
+            if (rand < 0.85) return MINERALS.COPPER;
+            if (rand < 0.95) return MINERALS.IRON;
+            return MINERALS.SILVER;
+        }
 
-        return MINERALS.DIRT;
+        // Deep (70-100)
+        if (depth < 100) {
+            if (rand < 0.25) return MINERALS.DIRT;
+            if (rand < 0.45) return MINERALS.COPPER;
+            if (rand < 0.7) return MINERALS.IRON;
+            if (rand < 0.9) return MINERALS.SILVER;
+            if (rand < 0.97) return MINERALS.GOLD;
+            return MINERALS.DIAMOND;
+        }
+
+        // Very deep (100-140)
+        if (depth < 140) {
+            if (rand < 0.15) return MINERALS.DIRT;
+            if (rand < 0.35) return MINERALS.IRON;
+            if (rand < 0.6) return MINERALS.SILVER;
+            if (rand < 0.85) return MINERALS.GOLD;
+            if (rand < 0.96) return MINERALS.DIAMOND;
+            return MINERALS.ALIEN;
+        }
+
+        // Extreme depth (140+)
+        if (rand < 0.3) return MINERALS.SILVER;
+        if (rand < 0.6) return MINERALS.GOLD;
+        if (rand < 0.88) return MINERALS.DIAMOND;
+        return MINERALS.ALIEN;
     }
 
     getBlock(x, y) {
