@@ -744,7 +744,8 @@ class Player {
             { id: 'engine', name: 'Engine', description: 'Faster movement', baseCost: 60, maxLevel: 5 },
             { id: 'hull', name: 'Hull Armor', description: 'More durability', baseCost: 90, maxLevel: 5 },
             { id: 'cooling', name: 'Cooling System', description: 'Essential for deep mining', baseCost: 150, maxLevel: 5 },
-            { id: 'bombs', name: 'Bomb Capacity', description: 'Carry more bombs', baseCost: 120, maxLevel: 3 }
+            { id: 'bombs', name: 'Bomb Capacity', description: 'Carry more bombs', baseCost: 120, maxLevel: 3 },
+            { id: 'arms', name: 'Robot Arms', description: 'Allows you to hold items like bombs and weapons', baseCost: 1000, maxLevel: 1 }
         ];
     }
 
@@ -1129,12 +1130,14 @@ class Player {
             ctx.globalAlpha = 1;
         }
 
-        // Draw arms (small rectangles on each side)
-        ctx.fillStyle = '#666';
-        // Left arm
-        ctx.fillRect(screenX - 13, screenY - 2, 3, 8);
-        // Right arm
-        ctx.fillRect(screenX + 10, screenY - 2, 3, 8);
+        // Draw arms (only if purchased)
+        if (this.upgrades.arms) {
+            ctx.fillStyle = '#666';
+            // Left arm
+            ctx.fillRect(screenX - 13, screenY - 2, 3, 8);
+            // Right arm
+            ctx.fillRect(screenX + 10, screenY - 2, 3, 8);
+        }
 
         // Draw drill as triangle (shakes when drilling)
         ctx.fillStyle = '#888';
