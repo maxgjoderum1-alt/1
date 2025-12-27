@@ -553,13 +553,22 @@ class Game {
         // Draw bomb trajectory preview (if player has arms and bombs)
         if (this.player.upgrades.arms && this.player.bombs > 0) {
             // Calculate throw velocity (same logic as throwBomb)
-            let throwVx = this.player.vx * 2;
+            const minThrowSpeed = 0.3;
+            let throwVx = this.player.vx * 5;
             let throwVy = this.player.vy - 0.2;
 
-            if (Math.abs(this.player.vx) < 0.1 && Math.abs(this.player.vy) < 0.1) {
-                throwVx = 0.3;
-                throwVy = -0.1;
+            // Ensure minimum throw speed in horizontal direction
+            if (Math.abs(throwVx) < minThrowSpeed) {
+                if (this.player.vx > 0.01) {
+                    throwVx = minThrowSpeed; // Throw right
+                } else if (this.player.vx < -0.01) {
+                    throwVx = -minThrowSpeed; // Throw left
+                } else {
+                    throwVx = minThrowSpeed; // Default right
+                }
             }
+
+            throwVy = -0.1;
 
             if (throwVy > 0) {
                 throwVy = -0.1;
@@ -608,35 +617,35 @@ class Game {
 
         // Render hotbar (bottom center of screen)
         if (this.player.upgrades.arms && this.player.bombs > 0) {
-            const hotbarX = this.width / 2 - 20;
-            const hotbarY = this.height - 60;
+            const hotbarX = this.width / 2 - 15;
+            const hotbarY = this.height - 50;
 
             // Hotbar background
             this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            this.ctx.fillRect(hotbarX, hotbarY, 40, 40);
+            this.ctx.fillRect(hotbarX, hotbarY, 30, 30);
 
             // Hotbar border
             this.ctx.strokeStyle = '#888';
             this.ctx.lineWidth = 2;
-            this.ctx.strokeRect(hotbarX, hotbarY, 40, 40);
+            this.ctx.strokeRect(hotbarX, hotbarY, 30, 30);
 
             // Draw bomb icon in hotbar
             this.ctx.fillStyle = '#000';
             this.ctx.beginPath();
-            this.ctx.arc(hotbarX + 20, hotbarY + 20, 8, 0, Math.PI * 2);
+            this.ctx.arc(hotbarX + 15, hotbarY + 15, 6, 0, Math.PI * 2);
             this.ctx.fill();
 
             // Draw fuse on bomb icon
             this.ctx.fillStyle = '#ff0000';
             this.ctx.beginPath();
-            this.ctx.arc(hotbarX + 15, hotbarY + 15, 3, 0, Math.PI * 2);
+            this.ctx.arc(hotbarX + 11, hotbarY + 11, 2, 0, Math.PI * 2);
             this.ctx.fill();
 
             // Draw bomb count
             this.ctx.fillStyle = '#fff';
-            this.ctx.font = 'bold 12px monospace';
+            this.ctx.font = 'bold 10px monospace';
             this.ctx.textAlign = 'right';
-            this.ctx.fillText(this.player.bombs, hotbarX + 36, hotbarY + 36);
+            this.ctx.fillText(this.player.bombs, hotbarX + 27, hotbarY + 27);
         }
     }
 
@@ -1345,19 +1354,30 @@ class Player {
         if (this.bombs > 0) {
             this.bombs--;
 
-            // Calculate throw velocity - throw in direction of movement
-            let throwVx = this.vx * 2; // Inherit player's horizontal velocity
+            // Calculate throw velocity based on movement direction
+            const minThrowSpeed = 0.3; // Minimum throw speed
+            let throwVx = this.vx * 5; // Amplify horizontal velocity
             let throwVy = this.vy - 0.2; // Throw slightly upward
 
-            // If mostly stationary, throw horizontally (slightly right)
-            if (Math.abs(this.vx) < 0.1 && Math.abs(this.vy) < 0.1) {
-                throwVx = 0.3; // Throw right
-                throwVy = -0.1; // Slight upward arc
+            // Ensure minimum throw speed in horizontal direction
+            if (Math.abs(throwVx) < minThrowSpeed) {
+                // Use sign of vx to determine direction, or default to right if stationary
+                if (this.vx > 0.01) {
+                    throwVx = minThrowSpeed; // Throw right
+                } else if (this.vx < -0.01) {
+                    throwVx = -minThrowSpeed; // Throw left
+                } else {
+                    // If truly stationary, throw right
+                    throwVx = minThrowSpeed;
+                }
             }
 
-            // Never allow downward throws - ensure vy is always upward or neutral
+            // Set default upward arc
+            throwVy = -0.1;
+
+            // Never allow downward throws
             if (throwVy > 0) {
-                throwVy = -0.1; // Force slight upward throw
+                throwVy = -0.1;
             }
 
             // Create and add bomb to game
