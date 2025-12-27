@@ -550,6 +550,62 @@ class Game {
         // Render player
         this.player.render(this.ctx, this.camera);
 
+        // Draw bomb trajectory preview (if player has arms and bombs)
+        if (this.player.upgrades.arms && this.player.bombs > 0) {
+            // Calculate throw velocity (same logic as throwBomb)
+            let throwVx = this.player.vx * 2;
+            let throwVy = this.player.vy - 0.2;
+
+            if (Math.abs(this.player.vx) < 0.1 && Math.abs(this.player.vy) < 0.1) {
+                throwVx = 0.3;
+                throwVy = -0.1;
+            }
+
+            if (throwVy > 0) {
+                throwVy = -0.1;
+            }
+
+            // Draw trajectory preview line
+            this.ctx.strokeStyle = 'rgba(255, 255, 0, 0.4)';
+            this.ctx.lineWidth = 2;
+            this.ctx.setLineDash([5, 5]); // Dashed line for preview
+            this.ctx.beginPath();
+
+            let px = this.player.x;
+            let py = this.player.y;
+            let pvx = throwVx;
+            let pvy = throwVy;
+
+            let startX = px * BLOCK_SIZE - this.camera.x;
+            let startY = py * BLOCK_SIZE - this.camera.y;
+            this.ctx.moveTo(startX, startY);
+
+            // Simulate trajectory
+            for (let i = 0; i < 100; i += 5) {
+                px += pvx * 5;
+                py += pvy * 5;
+                pvy += 0.05 * 5;
+                pvx *= 0.99;
+                pvy *= 0.99;
+
+                const screenX = px * BLOCK_SIZE - this.camera.x;
+                const screenY = py * BLOCK_SIZE - this.camera.y;
+                this.ctx.lineTo(screenX, screenY);
+
+                // Stop if hit ground
+                const blockX = Math.floor(px);
+                const blockY = Math.floor(py);
+                if (blockY >= 0 && blockY < WORLD_HEIGHT && blockX >= 0 && blockX < WORLD_WIDTH) {
+                    const block = this.world.getBlock(blockX, blockY);
+                    if (block && block.type !== BLOCK_TYPES.AIR) {
+                        break;
+                    }
+                }
+            }
+            this.ctx.stroke();
+            this.ctx.setLineDash([]); // Reset to solid line
+        }
+
         // Render hotbar (bottom center of screen)
         if (this.player.upgrades.arms && this.player.bombs > 0) {
             const hotbarX = this.width / 2 - 20;
