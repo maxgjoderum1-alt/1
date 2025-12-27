@@ -1569,19 +1569,20 @@ class World {
             }
         };
 
-        // Fill mountains: All sky outside player boundaries + underground walls
-        for (let y = Math.max(startY, -30); y < endY; y++) {
+        // Fill mountains: All sky outside playable area + underground walls
+        // Mountains extend infinitely upward (no limit)
+        for (let y = startY; y < endY; y++) {
             const screenY = y * BLOCK_SIZE - camera.y;
 
             if (y < SURFACE_LEVEL) {
-                // In the sky - fill everything outside player boundaries
-                // Left side: everything left of x=0.5
-                for (let x = startX; x < 0.5 && x < endX; x++) {
+                // In the sky - fill everything outside playable area
+                // Left side: everything left of x=1
+                for (let x = startX; x < 1 && x < endX; x++) {
                     const screenX = x * BLOCK_SIZE - camera.x;
                     drawRockBlock(screenX, screenY, y);
                 }
-                // Right side: everything right of x=59.5
-                for (let x = Math.max(WORLD_WIDTH - 0.5, startX); x < endX; x++) {
+                // Right side: everything right of x=59
+                for (let x = Math.max(WORLD_WIDTH - 1, startX); x < endX; x++) {
                     const screenX = x * BLOCK_SIZE - camera.x;
                     drawRockBlock(screenX, screenY, y);
                 }
