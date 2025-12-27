@@ -786,9 +786,17 @@ class Player {
         const oldX = this.x;
         const oldY = this.y;
 
-        // Move player
+        // Move player HORIZONTALLY first
         this.x += this.vx;
+
+        // Check and resolve HORIZONTAL collisions only
+        this.handleHorizontalCollisions(world);
+
+        // Then move VERTICALLY
         this.y += this.vy;
+
+        // Check and resolve VERTICAL collisions only
+        this.handleVerticalCollisions(world);
 
         // Collision with world boundaries
         if (this.x < 1) {
@@ -807,9 +815,6 @@ class Player {
             this.y = WORLD_HEIGHT - 2;
             this.vy = 0;
         }
-
-        // Check collision with blocks (with revert on collision)
-        this.handleCollisions(world, oldX, oldY);
 
         // Fuel consumption - only when thrusting
         if (isThrusting) {
@@ -850,22 +855,19 @@ class Player {
             return; // Still on cooldown
         }
 
-        // Drill blocks below and around player center (no diagonal - only straight down/sides)
-        const centerX = Math.floor(this.x + 0.5); // Round to nearest block
-        const blockY = Math.floor(this.y + 1); // Directly below
+        // Center player in their column when drilling down
+        const centerX = Math.floor(this.x + 0.5); // Nearest block center
+        const targetX = centerX; // Center of that block
+        const distToCenter = targetX - this.x;
 
-        let drilled = false;
-
-        // Try center block first
-        drilled = this.tryDrillBlock(world, game, centerX, blockY, 0, 0);
-
-        // If no block at center, try the block player is actually standing in
-        if (!drilled) {
-            const actualX = Math.floor(this.x);
-            if (actualX !== centerX) {
-                drilled = this.tryDrillBlock(world, game, actualX, blockY, 0, 0);
-            }
+        // Gently pull player toward center (10% per drill)
+        if (Math.abs(distToCenter) > 0.05) {
+            this.x += distToCenter * 0.1;
         }
+
+        // Drill block directly below
+        const blockY = Math.floor(this.y + 1);
+        const drilled = this.tryDrillBlock(world, game, centerX, blockY, 0, 0);
 
         // Update last drill time if we drilled something
         if (drilled) {
@@ -912,14 +914,11 @@ class Player {
         return false;
     }
 
-    handleCollisions(world, oldX, oldY) {
+    handleHorizontalCollisions(world) {
         const blockX = Math.floor(this.x);
         const blockY = Math.floor(this.y);
 
-        let collided = false;
-        const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
-
-        // Check surrounding blocks with proper collision bounds
+        // Check surrounding blocks for horizontal collisions
         for (let dx = -1; dx <= 1; dx++) {
             for (let dy = -1; dy <= 1; dy++) {
                 const bx = blockX + dx;
@@ -929,32 +928,56 @@ class Player {
                     const block = world.getBlock(bx, by);
 
                     if (block && block.type !== BLOCK_TYPES.AIR) {
-                        // Check if player overlaps with block (proper bounding box)
                         const distX = Math.abs(this.x - bx);
                         const distY = Math.abs(this.y - by);
 
-                        // Player has a small hitbox (0.4 x 0.4), block is 1x1
-                        // Collision if distance is less than 0.7 (0.5 block + 0.2 player)
+                        // Horizontal collision check
                         if (distX < 0.7 && distY < 0.7) {
-                            // Check if actually overlapping (not just close)
                             const overlapX = 0.7 - distX;
+
+                            if (overlapX > 0) {
+                                // Push horizontally away from block
+                                this.x += (this.x > bx ? overlapX : -overlapX);
+                                this.vx = 0;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    handleVerticalCollisions(world) {
+        const blockX = Math.floor(this.x);
+        const blockY = Math.floor(this.y);
+
+        let collided = false;
+        const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+
+        // Check surrounding blocks for vertical collisions
+        for (let dx = -1; dx <= 1; dx++) {
+            for (let dy = -1; dy <= 1; dy++) {
+                const bx = blockX + dx;
+                const by = blockY + dy;
+
+                if (by >= 0 && by < WORLD_HEIGHT && bx >= 0 && bx < WORLD_WIDTH) {
+                    const block = world.getBlock(bx, by);
+
+                    if (block && block.type !== BLOCK_TYPES.AIR) {
+                        const distX = Math.abs(this.x - bx);
+                        const distY = Math.abs(this.y - by);
+
+                        // Vertical collision check
+                        if (distX < 0.7 && distY < 0.7) {
                             const overlapY = 0.7 - distY;
 
-                            if (overlapX > 0 && overlapY > 0) {
-                                // Collision detected - resolve by smallest overlap
-                                // Prefer vertical resolution (standing on ground) unless clearly horizontal
-                                if (overlapX < overlapY * 0.7) {
-                                    // Push horizontally (only if significantly more horizontal than vertical)
-                                    this.x += (this.x > bx ? overlapX : -overlapX);
-                                    this.vx = 0; // Stop horizontal velocity
-                                } else {
-                                    // Push vertically (default for ground collisions)
-                                    this.y += (this.y > by ? overlapY : -overlapY);
-                                    this.vy = 0; // Stop vertical velocity
-                                }
+                            if (overlapY > 0) {
+                                // Push vertically away from block
+                                this.y += (this.y > by ? overlapY : -overlapY);
+                                this.vy = 0;
 
+                                // Damage on fast collisions
                                 if (!collided && speed > 0.6) {
-                                    // Damage on fast collisions
                                     this.hull -= speed * 0.3;
                                     collided = true;
                                 }
