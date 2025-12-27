@@ -1169,8 +1169,27 @@ class World {
             return { type: BLOCK_TYPES.AIR, mineral: null };
         }
 
-        // Determine block type based on depth
+        // CAVE GENERATION - Random air pockets underground
         const depth = y - SURFACE_LEVEL;
+
+        // Create random caves/air pockets at various depths
+        let caveProbability = 0;
+        if (depth > 10 && depth < 100) {
+            caveProbability = 0.03; // 3% chance shallow caves
+        } else if (depth >= 100 && depth < 500) {
+            caveProbability = 0.05; // 5% chance medium caves
+        } else if (depth >= 500 && depth < 2000) {
+            caveProbability = 0.04; // 4% chance deep caves
+        } else if (depth >= 2000) {
+            caveProbability = 0.03; // 3% chance very deep caves
+        }
+
+        // Random cave generation
+        if (Math.random() < caveProbability) {
+            return { type: BLOCK_TYPES.AIR, mineral: null };
+        }
+
+        // Determine block type based on depth
         let blockType;
 
         if (depth < 20) {
