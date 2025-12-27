@@ -286,8 +286,8 @@ class Game {
 
             for (const [shopType, shop] of Object.entries(SHOPS)) {
                 // Player must stand on one of the 2 blocks under the shop
-                // Shop at x=N has blocks at (N, SURFACE_LEVEL) and (N+1, SURFACE_LEVEL)
-                if (playerBlockX === shop.x || playerBlockX === shop.x + 1) {
+                // Shop at x=N has blocks at (N-1, SURFACE_LEVEL) and (N, SURFACE_LEVEL)
+                if (playerBlockX === shop.x - 1 || playerBlockX === shop.x) {
                     nearAnyShop = true;
                     nearestShop = shopType;
                     break; // Found the shop
@@ -1188,20 +1188,20 @@ class World {
 
         // SHOP PLATFORMS - 2 BOMB_ROCK blocks under each shop at surface level
         if (y === SURFACE_LEVEL) {
-            // FUEL shop at x=10: blocks (10,5) and (11,5)
-            if (x === 10 || x === 11) {
+            // FUEL shop at x=10: blocks (9,5) and (10,5)
+            if (x === 9 || x === 10) {
                 return { type: BLOCK_TYPES.BOMB_ROCK, mineral: null };
             }
-            // SELL shop at x=20: blocks (20,5) and (21,5)
-            if (x === 20 || x === 21) {
+            // SELL shop at x=20: blocks (19,5) and (20,5)
+            if (x === 19 || x === 20) {
                 return { type: BLOCK_TYPES.BOMB_ROCK, mineral: null };
             }
-            // UPGRADE shop at x=40: blocks (40,5) and (41,5)
-            if (x === 40 || x === 41) {
+            // UPGRADE shop at x=40: blocks (39,5) and (40,5)
+            if (x === 39 || x === 40) {
                 return { type: BLOCK_TYPES.BOMB_ROCK, mineral: null };
             }
-            // REPAIR shop at x=50: blocks (50,5) and (51,5)
-            if (x === 50 || x === 51) {
+            // REPAIR shop at x=50: blocks (49,5) and (50,5)
+            if (x === 49 || x === 50) {
                 return { type: BLOCK_TYPES.BOMB_ROCK, mineral: null };
             }
         }
@@ -1358,7 +1358,7 @@ class World {
                             color = '#333333';
                             break;
                         case BLOCK_TYPES.BOMB_ROCK:
-                            color = '#8B4513'; // Dark reddish-brown - indicates bomb-only
+                            color = '#404040'; // Dark gray - indicates bomb-only
                             break;
                         case BLOCK_TYPES.UNBREAKABLE:
                             color = '#111111';
