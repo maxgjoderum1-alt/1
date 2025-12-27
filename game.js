@@ -944,19 +944,19 @@ class Player {
                                     // Push horizontally
                                     this.x += (this.x > bx ? overlapX : -overlapX);
                                     // Stop horizontal velocity on collision
-                                    if (Math.abs(this.vx) > 0.1) {
-                                        this.vx *= -0.3; // Bounce if moving fast
+                                    if (Math.abs(this.vx) > 0.35) {
+                                        this.vx *= -0.3; // Bounce only if moving very fast
                                     } else {
-                                        this.vx = 0; // Just stop if moving slowly
+                                        this.vx = 0; // Just stop for normal movement
                                     }
                                 } else {
                                     // Push vertically (same logic as horizontal)
                                     this.y += (this.y > by ? overlapY : -overlapY);
                                     // Stop vertical velocity on collision
-                                    if (Math.abs(this.vy) > 0.1) {
-                                        this.vy *= -0.3; // Bounce if moving fast
+                                    if (Math.abs(this.vy) > 0.35) {
+                                        this.vy *= -0.3; // Bounce only if moving very fast
                                     } else {
-                                        this.vy = 0; // Just stop if moving slowly
+                                        this.vy = 0; // Just stop for normal movement
                                     }
                                 }
 
