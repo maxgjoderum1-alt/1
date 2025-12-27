@@ -821,8 +821,9 @@ class Player {
             this.x = WORLD_WIDTH - 0.5;
             this.vx = 0;
         }
-        if (this.y < 0) {
-            this.y = 0;
+        // Allow flying in the sky - limit how high you can go
+        if (this.y < -30) {
+            this.y = -30; // Can fly 30 blocks above world top
             this.vy = 0;
         }
         if (this.y > WORLD_HEIGHT - 2) {
