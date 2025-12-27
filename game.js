@@ -860,9 +860,9 @@ class Player {
         const targetX = centerX; // Center of that block
         const distToCenter = targetX - this.x;
 
-        // Gently pull player toward center (10% per drill)
-        if (Math.abs(distToCenter) > 0.05) {
-            this.x += distToCenter * 0.1;
+        // Pull player toward center (30% per drill for faster centering)
+        if (Math.abs(distToCenter) > 0.02) {
+            this.x += distToCenter * 0.3;
         }
 
         // Drill block directly below
@@ -931,14 +931,20 @@ class Player {
                         const distX = Math.abs(this.x - bx);
                         const distY = Math.abs(this.y - by);
 
-                        // Horizontal collision check
-                        if (distX < 0.7 && distY < 0.7) {
+                        // Only check horizontal collision if it's clearly a SIDE collision
+                        // (horizontal distance is smaller than vertical distance)
+                        if (distX < 0.7 && distY < 0.7 && distX < distY) {
                             const overlapX = 0.7 - distX;
 
                             if (overlapX > 0) {
-                                // Push horizontally away from block
-                                this.x += (this.x > bx ? overlapX : -overlapX);
-                                this.vx = 0;
+                                // Only push if moving INTO the block
+                                const movingIntoBlock = (this.x > bx && this.vx < 0) || (this.x < bx && this.vx > 0);
+
+                                if (movingIntoBlock || Math.abs(this.vx) > 0.2) {
+                                    // Push horizontally away from block
+                                    this.x += (this.x > bx ? overlapX : -overlapX);
+                                    this.vx = 0;
+                                }
                             }
                         }
                     }
