@@ -918,7 +918,7 @@ class Game {
                 REPAIR HULL - $${repairCost}
             </button>
             <button class="shop-btn" id="restock-bombs-btn" ${!canRestockBombs ? 'disabled' : ''}>
-                RESTOCK BOMBS - $${bombRestockCost}
+                RESTOCK BOMBS - 1 Gold
             </button>
             ${armsButtonHTML}
             <div style="color: #888; margin-top: 10px;">
