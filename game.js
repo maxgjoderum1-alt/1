@@ -148,7 +148,7 @@ class Game {
         this.lastWarningTime = 0;
         this.hasLeftShopArea = true; // Track if player has moved away from shop
         this.shopWaitStartTime = 0; // Track when player became stationary at shop
-        this.shopWaitDuration = 2000; // 2 seconds in milliseconds
+        this.shopWaitDuration = 1000; // 1 second in milliseconds
 
         this.setupEventListeners();
         this.checkSaveGame();
@@ -1273,12 +1273,12 @@ class World {
         // Minerals: Bronze, Silver, Gold, Emerald, Diamond (Iron removed)
         // Deeper = less dirt, rarer minerals more common
 
-        // Shallow (0-500) - 84% dirt, 14% bronze, 1% silver, 1% gold
+        // Shallow (0-500) - 84.5% dirt, 14% bronze, 1% silver, 0.5% gold
         if (depth < 500) {
-            if (rand < 0.84) return null; // 84% dirt
-            if (rand < 0.98) return MINERALS.BRONZE; // 14% bronze
-            if (rand < 0.99) return MINERALS.SILVER; // 1% silver
-            return MINERALS.GOLD; // 1% gold
+            if (rand < 0.845) return null; // 84.5% dirt
+            if (rand < 0.985) return MINERALS.BRONZE; // 14% bronze
+            if (rand < 0.995) return MINERALS.SILVER; // 1% silver
+            return MINERALS.GOLD; // 0.5% gold
         }
 
         // Medium (500-2000) - 78% dirt, 10% bronze, 10% silver, 1% gold, 1% emerald
