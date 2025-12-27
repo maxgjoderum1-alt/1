@@ -1265,16 +1265,16 @@ class World {
 
         // Shallow (0-500) - Mostly dirt, some Bronze
         if (depth < 500) {
-            if (rand < 0.80) return null; // 80% dirt
+            if (rand < 0.85) return null; // 85% dirt
             if (rand < 0.98) return MINERALS.BRONZE;
             return MINERALS.SILVER;
         }
 
-        // Medium (500-2000) - Less dirt, Bronze, Silver, some Gold
+        // Medium (500-2000) - More dirt, less minerals
         if (depth < 2000) {
-            if (rand < 0.6) return null; // 60% dirt (was 35% dirt + 25% iron)
-            if (rand < 0.8) return MINERALS.BRONZE;
-            if (rand < 0.95) return MINERALS.SILVER;
+            if (rand < 0.80) return null; // 80% dirt
+            if (rand < 0.90) return MINERALS.BRONZE;
+            if (rand < 0.97) return MINERALS.SILVER;
             return MINERALS.GOLD;
         }
 
