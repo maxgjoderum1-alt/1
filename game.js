@@ -564,7 +564,8 @@ class Game {
                 } else if (this.player.vx < -0.01) {
                     throwVx = -minThrowSpeed; // Throw left
                 } else {
-                    throwVx = minThrowSpeed; // Default right
+                    // Use last direction when stationary
+                    throwVx = minThrowSpeed * this.player.lastDirection;
                 }
             }
 
@@ -1014,6 +1015,7 @@ class Player {
         this.maxBombs = 3;
         this.lastDrillTime = 0;
         this.drillCooldown = 300; // 300ms between drills
+        this.lastDirection = 1; // Track last horizontal direction (1 = right, -1 = left)
 
         this.availableUpgrades = [
             { id: 'drill', name: 'Drill Power', description: 'Mine harder blocks (required for deep mining)', baseCost: 100, maxLevel: 5 },
@@ -1037,10 +1039,12 @@ class Player {
         // Handle input with momentum (supports both Arrow keys and WASD)
         if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
             this.vx -= this.speed * 0.5; // Slower horizontal movement
+            this.lastDirection = -1; // Remember left direction
             isThrusting = true;
         }
         if (keys['ArrowRight'] || keys['d'] || keys['D']) {
             this.vx += this.speed * 0.5; // Slower horizontal movement
+            this.lastDirection = 1; // Remember right direction
             isThrusting = true;
         }
         if (keys['ArrowUp'] || keys['w'] || keys['W']) {
@@ -1361,14 +1365,14 @@ class Player {
 
             // Ensure minimum throw speed in horizontal direction
             if (Math.abs(throwVx) < minThrowSpeed) {
-                // Use sign of vx to determine direction, or default to right if stationary
+                // Use sign of vx to determine direction, or use last direction if stationary
                 if (this.vx > 0.01) {
                     throwVx = minThrowSpeed; // Throw right
                 } else if (this.vx < -0.01) {
                     throwVx = -minThrowSpeed; // Throw left
                 } else {
-                    // If truly stationary, throw right
-                    throwVx = minThrowSpeed;
+                    // If stationary, use last direction
+                    throwVx = minThrowSpeed * this.lastDirection;
                 }
             }
 
@@ -1504,7 +1508,8 @@ class Player {
             money: this.money,
             upgrades: this.upgrades,
             bombs: this.bombs,
-            maxBombs: this.maxBombs
+            maxBombs: this.maxBombs,
+            lastDirection: this.lastDirection
         };
     }
 
