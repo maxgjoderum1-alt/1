@@ -937,8 +937,8 @@ class Player {
                                     this.x += (this.x > bx ? overlapX : -overlapX);
                                     this.vx *= -0.3; // Small bounce
                                 } else {
-                                    // Push vertically
-                                    this.y += (this.y > by ? overlapY : -overlapY);
+                                    // Push vertically (FIXED: inverted logic)
+                                    this.y += (this.y > by ? -overlapY : overlapY);
                                     this.vy *= -0.3; // Small bounce
                                 }
 
@@ -1146,56 +1146,46 @@ class World {
     generateMineral(depth) {
         const rand = Math.random();
 
-        // Define mineral probability ranges based on depth
-        // Deeper = better minerals more common
+        // Define mineral probability based on depth
+        // Only valuable minerals: Iron, Bronze, Silver, Gold, Emerald, Diamond
+        // Deeper = rarer minerals more common
 
-        // Very shallow (0-20)
-        if (depth < 20) {
-            if (rand < 0.9) return MINERALS.DIRT;
-            return MINERALS.COAL;
-        }
-
-        // Shallow (20-40)
-        if (depth < 40) {
-            if (rand < 0.6) return MINERALS.DIRT;
-            if (rand < 0.85) return MINERALS.COAL;
-            return MINERALS.COPPER;
-        }
-
-        // Medium depth (40-70)
-        if (depth < 70) {
-            if (rand < 0.4) return MINERALS.DIRT;
-            if (rand < 0.65) return MINERALS.COAL;
-            if (rand < 0.85) return MINERALS.COPPER;
-            if (rand < 0.95) return MINERALS.IRON;
+        // Shallow (0-500) - Iron and Bronze
+        if (depth < 500) {
+            if (rand < 0.7) return MINERALS.IRON;
+            if (rand < 0.95) return MINERALS.BRONZE;
             return MINERALS.SILVER;
         }
 
-        // Deep (70-100)
-        if (depth < 100) {
-            if (rand < 0.25) return MINERALS.DIRT;
-            if (rand < 0.45) return MINERALS.COPPER;
-            if (rand < 0.7) return MINERALS.IRON;
+        // Medium (500-2000) - Bronze, Silver, some Gold
+        if (depth < 2000) {
+            if (rand < 0.4) return MINERALS.IRON;
+            if (rand < 0.7) return MINERALS.BRONZE;
             if (rand < 0.9) return MINERALS.SILVER;
-            if (rand < 0.97) return MINERALS.GOLD;
+            return MINERALS.GOLD;
+        }
+
+        // Deep (2000-5000) - Silver, Gold, Emerald
+        if (depth < 5000) {
+            if (rand < 0.15) return MINERALS.BRONZE;
+            if (rand < 0.5) return MINERALS.SILVER;
+            if (rand < 0.8) return MINERALS.GOLD;
+            if (rand < 0.95) return MINERALS.EMERALD;
             return MINERALS.DIAMOND;
         }
 
-        // Very deep (100-140)
-        if (depth < 140) {
-            if (rand < 0.15) return MINERALS.DIRT;
-            if (rand < 0.35) return MINERALS.IRON;
-            if (rand < 0.6) return MINERALS.SILVER;
-            if (rand < 0.85) return MINERALS.GOLD;
-            if (rand < 0.96) return MINERALS.DIAMOND;
-            return MINERALS.ALIEN;
+        // Very Deep (5000-8000) - Gold, Emerald, Diamond
+        if (depth < 8000) {
+            if (rand < 0.3) return MINERALS.SILVER;
+            if (rand < 0.6) return MINERALS.GOLD;
+            if (rand < 0.85) return MINERALS.EMERALD;
+            return MINERALS.DIAMOND;
         }
 
-        // Extreme depth (140+)
-        if (rand < 0.3) return MINERALS.SILVER;
-        if (rand < 0.6) return MINERALS.GOLD;
-        if (rand < 0.88) return MINERALS.DIAMOND;
-        return MINERALS.ALIEN;
+        // Extreme Depth (8000+) - Emerald and Diamond
+        if (rand < 0.4) return MINERALS.GOLD;
+        if (rand < 0.7) return MINERALS.EMERALD;
+        return MINERALS.DIAMOND;
     }
 
     getBlock(x, y) {
