@@ -717,7 +717,7 @@ class Player {
         this.isOnSurface = false;
 
         // Movement stats (affected by upgrades)
-        this.speed = 0.04;
+        this.speed = 0.03; // Reduced from 0.04 for slower surface movement
         this.drillPower = 1;
         this.cooling = 0.5;
         this.bombs = 3;
@@ -775,10 +775,10 @@ class Player {
 
         // Apply drag (more drag for slower, more controllable movement)
         this.vx *= 0.84;
-        this.vy *= 0.90;
+        this.vy *= 0.88; // Increased from 0.90 to reduce terminal velocity
 
-        // Clamp velocity (reduced for safer collision)
-        const maxVel = 0.8;
+        // Clamp velocity (reduced for safer collision and prevent falling through blocks)
+        const maxVel = 0.5; // Reduced from 0.8 to prevent tunneling through blocks
         this.vx = Math.max(-maxVel, Math.min(maxVel, this.vx));
         this.vy = Math.max(-maxVel, Math.min(maxVel, this.vy));
 
@@ -1020,7 +1020,7 @@ class Player {
 
     applyUpgrades() {
         // Engine
-        this.speed = 0.04 + (this.upgrades.engine || 0) * 0.015;
+        this.speed = 0.03 + (this.upgrades.engine || 0) * 0.015;
 
         // Drill
         this.drillPower = 1 + (this.upgrades.drill || 0);
