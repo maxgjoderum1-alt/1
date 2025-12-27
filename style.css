@@ -240,7 +240,8 @@ button:active {
     padding: 30px;
     max-width: 600px;
     max-height: 80vh;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
 }
 
 .shop-content h2 {
@@ -248,12 +249,16 @@ button:active {
     font-size: 32px;
     margin-bottom: 20px;
     text-align: center;
+    flex-shrink: 0;
 }
 
 .shop-section {
     margin: 20px 0;
     border-top: 1px solid #0f0;
     padding-top: 15px;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
 }
 
 .shop-section h3 {
@@ -286,6 +291,8 @@ button:active {
     border-color: #ff9900;
     color: #000;
     margin-top: 20px;
+    flex-shrink: 0;
+    cursor: pointer;
 }
 
 .close-btn:hover {

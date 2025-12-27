@@ -145,6 +145,7 @@ class Game {
     }
 
     setupEventListeners() {
+        // Keyboard events
         document.addEventListener('keydown', (e) => {
             this.keys[e.key] = true;
             if (this.inShop && e.key === 'Escape') {
@@ -156,14 +157,28 @@ class Game {
             this.keys[e.key] = false;
         });
 
-        document.getElementById('new-game-btn').addEventListener('click', () => this.newGame());
-        document.getElementById('continue-btn').addEventListener('click', () => this.continueGame());
-        document.getElementById('close-shop-btn').addEventListener('click', () => this.closeShop());
-        document.getElementById('sell-cargo-btn').addEventListener('click', () => this.sellCargo());
-        document.getElementById('repair-hull-btn').addEventListener('click', () => this.repairHull());
-        document.getElementById('refuel-btn').addEventListener('click', () => this.refuel());
-        document.getElementById('restart-btn').addEventListener('click', () => this.newGame());
-        document.getElementById('new-game-victory-btn').addEventListener('click', () => this.newGame());
+        // Menu buttons
+        const newGameBtn = document.getElementById('new-game-btn');
+        const continueBtn = document.getElementById('continue-btn');
+        if (newGameBtn) newGameBtn.addEventListener('click', () => this.newGame());
+        if (continueBtn) continueBtn.addEventListener('click', () => this.continueGame());
+
+        // Shop buttons
+        const closeShopBtn = document.getElementById('close-shop-btn');
+        const sellCargoBtn = document.getElementById('sell-cargo-btn');
+        const repairHullBtn = document.getElementById('repair-hull-btn');
+        const refuelBtn = document.getElementById('refuel-btn');
+
+        if (closeShopBtn) closeShopBtn.addEventListener('click', () => this.closeShop());
+        if (sellCargoBtn) sellCargoBtn.addEventListener('click', () => this.sellCargo());
+        if (repairHullBtn) repairHullBtn.addEventListener('click', () => this.repairHull());
+        if (refuelBtn) refuelBtn.addEventListener('click', () => this.refuel());
+
+        // Game over buttons
+        const restartBtn = document.getElementById('restart-btn');
+        const newGameVictoryBtn = document.getElementById('new-game-victory-btn');
+        if (restartBtn) restartBtn.addEventListener('click', () => this.newGame());
+        if (newGameVictoryBtn) newGameVictoryBtn.addEventListener('click', () => this.newGame());
     }
 
     checkSaveGame() {
