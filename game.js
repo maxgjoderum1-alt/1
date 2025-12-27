@@ -102,6 +102,16 @@ class Bomb {
         const timeAlive = Date.now() - this.createdTime;
         if (timeAlive >= this.fuseTime) {
             this.exploded = true;
+            return;
+        }
+
+        // Also explode if hit ground (solid block)
+        const blockX = Math.floor(this.x);
+        const blockY = Math.floor(this.y);
+        const block = world.getBlock(blockX, blockY);
+
+        if (block && block.type !== BLOCK_TYPES.AIR) {
+            this.exploded = true;
         }
     }
 
