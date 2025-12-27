@@ -33,7 +33,8 @@ const BLOCK_TYPES = {
     SOFT_EARTH: 1,
     HARD_ROCK: 2,
     VERY_HARD: 3,
-    UNBREAKABLE: 4
+    UNBREAKABLE: 4,
+    BOMB_ROCK: 5  // Hard stone - only removable with bombs (appears at depth 500+)
 };
 
 // ========================================
@@ -888,7 +889,7 @@ class Player {
         if (blockY >= SURFACE_LEVEL && blockY < WORLD_HEIGHT && blockX >= 0 && blockX < WORLD_WIDTH) {
             const block = world.getBlock(blockX, blockY);
 
-            if (block && block.type !== BLOCK_TYPES.AIR && block.type !== BLOCK_TYPES.UNBREAKABLE) {
+            if (block && block.type !== BLOCK_TYPES.AIR && block.type !== BLOCK_TYPES.UNBREAKABLE && block.type !== BLOCK_TYPES.BOMB_ROCK) {
                 const hardness = this.getBlockHardness(block.type);
 
                 if (this.drillPower >= hardness) {
@@ -1198,8 +1199,18 @@ class World {
             blockType = Math.random() < 0.7 ? BLOCK_TYPES.SOFT_EARTH : BLOCK_TYPES.HARD_ROCK;
         } else if (depth < 120) {
             blockType = Math.random() < 0.5 ? BLOCK_TYPES.HARD_ROCK : BLOCK_TYPES.VERY_HARD;
-        } else {
+        } else if (depth < 500) {
             blockType = Math.random() < 0.3 ? BLOCK_TYPES.HARD_ROCK : BLOCK_TYPES.VERY_HARD;
+        } else {
+            // Deep mining (500+) - introduce BOMB_ROCK
+            const rand = Math.random();
+            if (rand < 0.15) {
+                blockType = BLOCK_TYPES.BOMB_ROCK; // 15% bomb-only rock
+            } else if (rand < 0.45) {
+                blockType = BLOCK_TYPES.HARD_ROCK; // 30% hard rock
+            } else {
+                blockType = BLOCK_TYPES.VERY_HARD; // 55% very hard
+            }
         }
 
         // Occasional unbreakable blocks deep down
@@ -1209,7 +1220,7 @@ class World {
 
         // Determine mineral
         let mineral = null;
-        if (blockType !== BLOCK_TYPES.AIR && blockType !== BLOCK_TYPES.UNBREAKABLE) {
+        if (blockType !== BLOCK_TYPES.AIR && blockType !== BLOCK_TYPES.UNBREAKABLE && blockType !== BLOCK_TYPES.BOMB_ROCK) {
             mineral = this.generateMineral(depth);
         }
 
@@ -1307,6 +1318,9 @@ class World {
                             break;
                         case BLOCK_TYPES.VERY_HARD:
                             color = '#333333';
+                            break;
+                        case BLOCK_TYPES.BOMB_ROCK:
+                            color = '#8B4513'; // Dark reddish-brown - indicates bomb-only
                             break;
                         case BLOCK_TYPES.UNBREAKABLE:
                             color = '#111111';
