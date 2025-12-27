@@ -147,6 +147,7 @@ class Game {
         this.particles = [];
         this.audio = new AudioSystem();
         this.lastWarningTime = 0;
+        this.shopClosedTime = 0; // Prevent shop from reopening immediately
 
         this.setupEventListeners();
         this.checkSaveGame();
@@ -263,8 +264,9 @@ class Game {
 
         // Check proximity to shops - only when on surface and stationary
         const speed = Math.sqrt(this.player.vx * this.player.vx + this.player.vy * this.player.vy);
-        if (this.player.y <= SURFACE_LEVEL && speed < 0.2 && !this.inShop) {
-            // Check each shop
+        const now = Date.now();
+        if (this.player.y <= SURFACE_LEVEL && speed < 0.2 && !this.inShop && (now - this.shopClosedTime > 500)) {
+            // Check each shop (only if 500ms have passed since closing)
             for (const [shopType, shop] of Object.entries(SHOPS)) {
                 const distance = Math.abs(this.player.x - shop.x);
                 if (distance < 2) {
@@ -426,6 +428,7 @@ class Game {
     closeShop() {
         this.inShop = false;
         this.player.isOnSurface = false;
+        this.shopClosedTime = Date.now(); // Prevent immediate reopening
         document.getElementById('shop-overlay').style.display = 'none';
         this.saveGame();
     }
@@ -1187,59 +1190,63 @@ class World {
             ctx.fillText(shopType[0], shopScreenX, shopScreenY - 15);
         }
 
-        // Draw mountain walls at world edges
+        // Draw mountain walls/rock in all out-of-bounds visible areas
         const leftWallX = 0 * BLOCK_SIZE - camera.x;
         const rightWallX = WORLD_WIDTH * BLOCK_SIZE - camera.x;
 
-        // Left wall
-        if (leftWallX > -100 && leftWallX < ctx.canvas.width + 100) {
-            for (let y = Math.max(0, startY); y < Math.min(WORLD_HEIGHT, endY); y++) {
-                const screenY = y * BLOCK_SIZE - camera.y;
-                const depth = y - SURFACE_LEVEL;
+        // Helper function to draw a rock block
+        const drawRockBlock = (screenX, screenY, y) => {
+            const depth = y - SURFACE_LEVEL;
+            const variation = (y % 3) * 0.1;
+            const baseColor = depth < 0 ? [101, 67, 33] : [85, 85, 85]; // Brown above, gray below
+            const darkening = Math.min(0.7, Math.max(0, depth) / WORLD_HEIGHT);
 
-                // Rock pattern - varying shades
-                const variation = (y % 3) * 0.1;
-                const baseColor = depth < 0 ? [101, 67, 33] : [85, 85, 85]; // Brown above, gray below
-                const darkening = Math.min(0.7, Math.max(0, depth) / WORLD_HEIGHT);
+            ctx.fillStyle = `rgb(${baseColor[0] * (1 - darkening + variation)}, ${baseColor[1] * (1 - darkening + variation)}, ${baseColor[2] * (1 - darkening + variation)})`;
+            ctx.fillRect(screenX, screenY, BLOCK_SIZE, BLOCK_SIZE);
 
-                ctx.fillStyle = `rgb(${baseColor[0] * (1 - darkening + variation)}, ${baseColor[1] * (1 - darkening + variation)}, ${baseColor[2] * (1 - darkening + variation)})`;
-                ctx.fillRect(leftWallX, screenY, BLOCK_SIZE, BLOCK_SIZE);
+            // Add texture lines
+            if (y % 2 === 0) {
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(screenX, screenY);
+                ctx.lineTo(screenX + BLOCK_SIZE, screenY);
+                ctx.stroke();
+            }
+        };
 
-                // Add texture lines
-                if (y % 2 === 0) {
-                    ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
-                    ctx.lineWidth = 1;
-                    ctx.beginPath();
-                    ctx.moveTo(leftWallX, screenY);
-                    ctx.lineTo(leftWallX + BLOCK_SIZE, screenY);
-                    ctx.stroke();
-                }
+        // Fill all visible out-of-bounds areas with mountains
+        for (let y = startY; y < endY; y++) {
+            const screenY = y * BLOCK_SIZE - camera.y;
+
+            // Left side (x < 0)
+            for (let x = startX; x < 0 && x < endX; x++) {
+                const screenX = x * BLOCK_SIZE - camera.x;
+                drawRockBlock(screenX, screenY, y);
+            }
+
+            // Right side (x >= WORLD_WIDTH)
+            for (let x = Math.max(WORLD_WIDTH, startX); x < endX; x++) {
+                const screenX = x * BLOCK_SIZE - camera.x;
+                drawRockBlock(screenX, screenY, y);
             }
         }
 
-        // Right wall
-        if (rightWallX > -100 && rightWallX < ctx.canvas.width + 100) {
-            for (let y = Math.max(0, startY); y < Math.min(WORLD_HEIGHT, endY); y++) {
+        // Top area (y < 0) - fill entire width
+        for (let y = startY; y < 0 && y < endY; y++) {
+            for (let x = startX; x < endX; x++) {
+                const screenX = x * BLOCK_SIZE - camera.x;
                 const screenY = y * BLOCK_SIZE - camera.y;
-                const depth = y - SURFACE_LEVEL;
+                drawRockBlock(screenX, screenY, y);
+            }
+        }
 
-                // Rock pattern - varying shades
-                const variation = (y % 3) * 0.1;
-                const baseColor = depth < 0 ? [101, 67, 33] : [85, 85, 85]; // Brown above, gray below
-                const darkening = Math.min(0.7, Math.max(0, depth) / WORLD_HEIGHT);
-
-                ctx.fillStyle = `rgb(${baseColor[0] * (1 - darkening + variation)}, ${baseColor[1] * (1 - darkening + variation)}, ${baseColor[2] * (1 - darkening + variation)})`;
-                ctx.fillRect(rightWallX - BLOCK_SIZE, screenY, BLOCK_SIZE, BLOCK_SIZE);
-
-                // Add texture lines
-                if (y % 2 === 0) {
-                    ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
-                    ctx.lineWidth = 1;
-                    ctx.beginPath();
-                    ctx.moveTo(rightWallX - BLOCK_SIZE, screenY);
-                    ctx.lineTo(rightWallX, screenY);
-                    ctx.stroke();
-                }
+        // Bottom area (y >= WORLD_HEIGHT) - fill entire width
+        for (let y = Math.max(WORLD_HEIGHT, startY); y < endY; y++) {
+            for (let x = startX; x < endX; x++) {
+                const screenX = x * BLOCK_SIZE - camera.x;
+                const screenY = y * BLOCK_SIZE - camera.y;
+                drawRockBlock(screenX, screenY, y);
             }
         }
     }
