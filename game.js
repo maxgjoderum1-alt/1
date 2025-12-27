@@ -19,14 +19,12 @@ const SHOPS = {
 
 // Mineral types
 const MINERALS = {
-    DIRT: { name: 'Dirt', color: '#654321', value: 1, weight: 1, rarity: 1.0 },
-    COAL: { name: 'Coal', color: '#333333', value: 5, weight: 2, rarity: 0.3 },
-    COPPER: { name: 'Copper', color: '#B87333', value: 15, weight: 3, rarity: 0.15 },
-    IRON: { name: 'Iron', color: '#808080', value: 30, weight: 4, rarity: 0.1 },
-    SILVER: { name: 'Silver', color: '#C0C0C0', value: 75, weight: 5, rarity: 0.05 },
-    GOLD: { name: 'Gold', color: '#FFD700', value: 150, weight: 6, rarity: 0.02 },
-    DIAMOND: { name: 'Diamond', color: '#00FFFF', value: 500, weight: 3, rarity: 0.005 },
-    ALIEN: { name: 'Alien Artifact', color: '#FF00FF', value: 1000, weight: 2, rarity: 0.001 }
+    IRON: { name: 'Iron', color: '#808080', value: 20, weight: 4, rarity: 0.2 },
+    BRONZE: { name: 'Bronze', color: '#CD7F32', value: 40, weight: 4, rarity: 0.12 },
+    SILVER: { name: 'Silver', color: '#C0C0C0', value: 75, weight: 5, rarity: 0.08 },
+    GOLD: { name: 'Gold', color: '#FFD700', value: 150, weight: 6, rarity: 0.04 },
+    EMERALD: { name: 'Emerald', color: '#50C878', value: 300, weight: 4, rarity: 0.015 },
+    DIAMOND: { name: 'Diamond', color: '#00FFFF', value: 500, weight: 3, rarity: 0.008 }
 };
 
 // Block types
@@ -148,6 +146,8 @@ class Game {
         this.audio = new AudioSystem();
         this.lastWarningTime = 0;
         this.hasLeftShopArea = true; // Track if player has moved away from shop
+        this.shopWaitStartTime = 0; // Track when player became stationary at shop
+        this.shopWaitDuration = 3000; // 3 seconds in milliseconds
 
         this.setupEventListeners();
         this.checkSaveGame();
@@ -264,6 +264,7 @@ class Game {
 
         // Check proximity to shops - only when on surface and stationary
         const speed = Math.sqrt(this.player.vx * this.player.vx + this.player.vy * this.player.vy);
+        const now = Date.now();
 
         if (this.player.y <= SURFACE_LEVEL && !this.inShop) {
             // Check if player is near any shop
@@ -285,11 +286,24 @@ class Game {
             // If player has moved away from all shops, mark as left shop area
             if (!nearAnyShop) {
                 this.hasLeftShopArea = true;
+                this.shopWaitStartTime = 0; // Reset timer
             }
 
-            // Only open shop if player is stationary and has left shop area since last visit
-            if (nearestShop && speed < 0.2 && this.hasLeftShopArea) {
-                this.openShop(nearestShop);
+            // Check if player is stationary at a shop
+            if (nearestShop && speed < 0.1 && this.hasLeftShopArea) {
+                // Start timer if not already started
+                if (this.shopWaitStartTime === 0) {
+                    this.shopWaitStartTime = now;
+                }
+
+                // Open shop after 3 seconds of being stationary
+                if (now - this.shopWaitStartTime >= this.shopWaitDuration) {
+                    this.openShop(nearestShop);
+                    this.shopWaitStartTime = 0; // Reset for next time
+                }
+            } else if (speed >= 0.1) {
+                // Reset timer if player starts moving
+                this.shopWaitStartTime = 0;
             }
         }
 
@@ -500,14 +514,35 @@ class Game {
         section.style.display = 'block';
 
         let totalValue = 0;
-        this.player.cargo.forEach(mineral => totalValue += mineral.value);
+        const mineralCounts = {};
+
+        // Count each type of mineral
+        this.player.cargo.forEach(mineral => {
+            totalValue += mineral.value;
+            if (!mineralCounts[mineral.name]) {
+                mineralCounts[mineral.name] = { count: 0, value: 0, color: mineral.color };
+            }
+            mineralCounts[mineral.name].count++;
+            mineralCounts[mineral.name].value += mineral.value;
+        });
+
+        // Generate mineral list HTML
+        let mineralListHTML = '';
+        for (const [name, data] of Object.entries(mineralCounts)) {
+            mineralListHTML += `
+                <div style="color: ${data.color}; margin: 5px 0; padding: 5px; background: rgba(0,20,0,0.5);">
+                    ${name}: ${data.count}x - $${data.value}
+                </div>
+            `;
+        }
 
         section.innerHTML = `
             <h3>TRADING POST</h3>
-            <div style="color: #888; margin-bottom: 15px;">
-                Cargo: ${this.player.cargo.length} items worth $${totalValue}
+            <div style="color: #888; margin-bottom: 10px;">
+                Total Cargo: ${this.player.cargo.length} items
             </div>
-            <button class="shop-btn" id="sell-all-btn" ${this.player.cargo.length === 0 ? 'disabled' : ''}>
+            ${mineralListHTML || '<div style="color: #666;">No cargo to sell</div>'}
+            <button class="shop-btn" id="sell-all-btn" style="margin-top: 15px;" ${this.player.cargo.length === 0 ? 'disabled' : ''}>
                 SELL ALL CARGO - $${totalValue}
             </button>
         `;
@@ -679,6 +714,8 @@ class Player {
         this.cooling = 0.5;
         this.bombs = 3;
         this.maxBombs = 3;
+        this.lastDrillTime = 0;
+        this.drillCooldown = 300; // 300ms between drills
 
         this.availableUpgrades = [
             { id: 'drill', name: 'Drill Power', description: 'Mine harder blocks (required for deep mining)', baseCost: 100, maxLevel: 5 },
@@ -692,8 +729,8 @@ class Player {
     }
 
     update(keys, world, game) {
-        // Apply gravity
-        this.vy += 0.02;
+        // Apply gravity (stronger to prevent flying)
+        this.vy += 0.08;
 
         // Track if thrusting (for fuel consumption)
         let isThrusting = false;
@@ -776,6 +813,12 @@ class Player {
     }
 
     drill(world, game) {
+        // Check cooldown
+        const now = Date.now();
+        if (now - this.lastDrillTime < this.drillCooldown) {
+            return; // Still on cooldown
+        }
+
         const blockX = Math.floor(this.x);
         const blockY = Math.floor(this.y + 1);
 
@@ -789,6 +832,11 @@ class Player {
         // If moving sideways, also drill in that direction
         if (!drilled && Math.abs(this.vx) > 0.2) {
             drilled = this.tryDrillBlock(world, game, sideBlockX, sideBlockY, 0, 0);
+        }
+
+        // Update last drill time if we drilled something
+        if (drilled) {
+            this.lastDrillTime = now;
         }
     }
 
