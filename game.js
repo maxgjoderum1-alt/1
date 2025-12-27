@@ -556,7 +556,8 @@ class Game {
         this.player.render(this.ctx, this.camera);
 
         // Draw bomb trajectory preview (if player has arms, bombs, and slot 1 selected)
-        if (this.player.upgrades.arms && this.player.bombs > 0 && this.player.selectedSlot === 1) {
+        const armsLevel = this.player.upgrades.arms || 0;
+        if (armsLevel > 0 && this.player.bombs > 0 && this.player.selectedSlot === 1) {
             // Calculate throw velocity (same logic as throwBomb)
             const minThrowSpeed = 0.3;
             let throwVx = this.player.vx * 5;
@@ -621,56 +622,57 @@ class Game {
             this.ctx.setLineDash([]); // Reset to solid line
         }
 
-        // Render hotbar with 3 slots (only if player has robot arms)
-        if (this.player.upgrades.arms) {
+        // Render hotbar - number of slots = arms level (0 = no hotbar, 1 = 1 slot, 2 = 2 slots, etc.)
+        if (armsLevel > 0) {
             const slotSize = 30;
             const slotSpacing = 5;
-            const hotbarStartX = this.width / 2 - (slotSize * 3 + slotSpacing * 2) / 2;
+            const numSlots = armsLevel; // Number of slots = arms level
+            const hotbarStartX = this.width / 2 - (slotSize * numSlots + slotSpacing * (numSlots - 1)) / 2;
             const hotbarY = this.height - 50;
 
-            for (let slot = 1; slot <= 3; slot++) {
-            const slotX = hotbarStartX + (slot - 1) * (slotSize + slotSpacing);
+            for (let slot = 1; slot <= numSlots; slot++) {
+                const slotX = hotbarStartX + (slot - 1) * (slotSize + slotSpacing);
 
-            // Slot background
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            this.ctx.fillRect(slotX, hotbarY, slotSize, slotSize);
+                // Slot background
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                this.ctx.fillRect(slotX, hotbarY, slotSize, slotSize);
 
-            // Slot border (highlighted if selected)
-            if (this.player.selectedSlot === slot) {
-                this.ctx.strokeStyle = '#fff';
-                this.ctx.lineWidth = 3;
-            } else {
-                this.ctx.strokeStyle = '#888';
-                this.ctx.lineWidth = 2;
-            }
-            this.ctx.strokeRect(slotX, hotbarY, slotSize, slotSize);
+                // Slot border (highlighted if selected)
+                if (this.player.selectedSlot === slot) {
+                    this.ctx.strokeStyle = '#fff';
+                    this.ctx.lineWidth = 3;
+                } else {
+                    this.ctx.strokeStyle = '#888';
+                    this.ctx.lineWidth = 2;
+                }
+                this.ctx.strokeRect(slotX, hotbarY, slotSize, slotSize);
 
-            // Draw slot number
-            this.ctx.fillStyle = '#888';
-            this.ctx.font = 'bold 10px monospace';
-            this.ctx.textAlign = 'left';
-            this.ctx.fillText(slot, slotX + 3, hotbarY + 10);
-
-            // Draw bomb icon in slot 1 if player has arms and bombs
-            if (slot === 1 && this.player.upgrades.arms && this.player.bombs > 0) {
-                // Draw bomb icon
-                this.ctx.fillStyle = '#000';
-                this.ctx.beginPath();
-                this.ctx.arc(slotX + 15, hotbarY + 15, 6, 0, Math.PI * 2);
-                this.ctx.fill();
-
-                // Draw fuse
-                this.ctx.fillStyle = '#ff0000';
-                this.ctx.beginPath();
-                this.ctx.arc(slotX + 11, hotbarY + 11, 2, 0, Math.PI * 2);
-                this.ctx.fill();
-
-                // Draw bomb count
-                this.ctx.fillStyle = '#fff';
+                // Draw slot number
+                this.ctx.fillStyle = '#888';
                 this.ctx.font = 'bold 10px monospace';
-                this.ctx.textAlign = 'right';
-                this.ctx.fillText(this.player.bombs, slotX + 27, hotbarY + 27);
-            }
+                this.ctx.textAlign = 'left';
+                this.ctx.fillText(slot, slotX + 3, hotbarY + 10);
+
+                // Draw bomb icon in slot 1 if player has bombs
+                if (slot === 1 && this.player.bombs > 0) {
+                    // Draw bomb icon
+                    this.ctx.fillStyle = '#000';
+                    this.ctx.beginPath();
+                    this.ctx.arc(slotX + 15, hotbarY + 15, 6, 0, Math.PI * 2);
+                    this.ctx.fill();
+
+                    // Draw fuse
+                    this.ctx.fillStyle = '#ff0000';
+                    this.ctx.beginPath();
+                    this.ctx.arc(slotX + 11, hotbarY + 11, 2, 0, Math.PI * 2);
+                    this.ctx.fill();
+
+                    // Draw bomb count
+                    this.ctx.fillStyle = '#fff';
+                    this.ctx.font = 'bold 10px monospace';
+                    this.ctx.textAlign = 'right';
+                    this.ctx.fillText(this.player.bombs, slotX + 27, hotbarY + 27);
+                }
             }
         }
     }
@@ -889,10 +891,6 @@ class Game {
         const repairCost = Math.ceil((this.player.maxHull - this.player.hull) * 2);
         const canRepair = repairCost > 0 && this.player.money >= repairCost;
 
-        const armsCost = 1000;
-        const hasArms = this.player.upgrades.arms;
-        const canBuyArms = !hasArms && this.player.money >= armsCost;
-
         section.innerHTML = `
             <h3>REPAIR & ITEMS</h3>
             <button class="shop-btn" id="repair-hull-dynamic-btn" ${!canRepair ? 'disabled' : ''}>
@@ -901,36 +899,20 @@ class Game {
             <button class="shop-btn" id="restock-bombs-btn">
                 RESTOCK BOMBS (Free)
             </button>
-            <button class="shop-btn" id="buy-arms-btn" ${hasArms || !canBuyArms ? 'disabled' : ''}>
-                ${hasArms ? 'ROBOT ARMS - OWNED' : `ROBOT ARMS - $${armsCost}`}
-            </button>
             <div style="color: #888; margin-top: 10px;">
                 Hull: ${Math.floor(this.player.hull)}/${this.player.maxHull}<br>
-                Bombs: ${this.player.bombs}/${this.player.maxBombs}<br>
-                ${hasArms ? 'Robot Arms: Equipped' : 'Robot Arms: Not Purchased'}
+                Bombs: ${this.player.bombs}/${this.player.maxBombs}
             </div>
         `;
 
         const repairBtn = document.getElementById('repair-hull-dynamic-btn');
         const bombsBtn = document.getElementById('restock-bombs-btn');
-        const armsBtn = document.getElementById('buy-arms-btn');
 
         if (repairBtn) repairBtn.addEventListener('click', () => this.repairHull());
         if (bombsBtn) bombsBtn.addEventListener('click', () => {
             this.player.bombs = this.player.maxBombs;
             this.updateShopUI();
         });
-        if (armsBtn) armsBtn.addEventListener('click', () => this.buyRobotArms());
-    }
-
-    buyRobotArms() {
-        const armsCost = 1000;
-        if (!this.player.upgrades.arms && this.player.money >= armsCost) {
-            this.player.money -= armsCost;
-            this.player.upgrades.arms = 1;
-            this.audio.playCollect();
-            this.updateShopUI();
-        }
     }
 
     renderUpgrades() {
@@ -1062,7 +1044,7 @@ class Player {
         this.lastDrillTime = 0;
         this.drillCooldown = 300; // 300ms between drills
         this.lastDirection = 1; // Track last horizontal direction (1 = right, -1 = left)
-        this.selectedSlot = 0; // Hotbar slot selection (0 = none, 1-3 = slot number)
+        this.selectedSlot = 0; // Hotbar slot selection (0 = none, 1-5 = slot number based on arms level)
 
         this.availableUpgrades = [
             { id: 'drill', name: 'Drill Power', description: 'Mine harder blocks (required for deep mining)', baseCost: 100, maxLevel: 5 },
@@ -1071,7 +1053,8 @@ class Player {
             { id: 'engine', name: 'Engine', description: 'Faster movement', baseCost: 60, maxLevel: 5 },
             { id: 'hull', name: 'Hull Armor', description: 'More durability', baseCost: 90, maxLevel: 5 },
             { id: 'cooling', name: 'Cooling System', description: 'Essential for deep mining', baseCost: 150, maxLevel: 5 },
-            { id: 'bombs', name: 'Bomb Capacity', description: 'Carry more bombs', baseCost: 120, maxLevel: 3 }
+            { id: 'bombs', name: 'Bomb Capacity', description: 'Carry more bombs', baseCost: 120, maxLevel: 3 },
+            { id: 'arms', name: 'Robot Arms', description: 'Adds hotbar slots - 1 slot per level', baseCost: 1000, maxLevel: 5 }
         ];
     }
 
@@ -1102,18 +1085,27 @@ class Player {
             isThrusting = true; // Drilling also consumes fuel
         }
 
-        // Hotbar slot selection (toggle on/off)
-        if (keys['1']) {
+        // Hotbar slot selection (toggle on/off) - only allow selecting slots up to arms level
+        const armsLevel = this.upgrades.arms || 0;
+        if (keys['1'] && armsLevel >= 1) {
             this.selectedSlot = (this.selectedSlot === 1) ? 0 : 1;
             keys['1'] = false;
         }
-        if (keys['2']) {
+        if (keys['2'] && armsLevel >= 2) {
             this.selectedSlot = (this.selectedSlot === 2) ? 0 : 2;
             keys['2'] = false;
         }
-        if (keys['3']) {
+        if (keys['3'] && armsLevel >= 3) {
             this.selectedSlot = (this.selectedSlot === 3) ? 0 : 3;
             keys['3'] = false;
+        }
+        if (keys['4'] && armsLevel >= 4) {
+            this.selectedSlot = (this.selectedSlot === 4) ? 0 : 4;
+            keys['4'] = false;
+        }
+        if (keys['5'] && armsLevel >= 5) {
+            this.selectedSlot = (this.selectedSlot === 5) ? 0 : 5;
+            keys['5'] = false;
         }
 
         // Throw bomb with spacebar (requires arms upgrade and slot 1 selected)
