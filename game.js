@@ -70,6 +70,95 @@ class Particle {
 }
 
 // ========================================
+// BOMB SYSTEM
+// ========================================
+class Bomb {
+    constructor(x, y, vx, vy) {
+        this.x = x;
+        this.y = y;
+        this.vx = vx;
+        this.vy = vy;
+        this.exploded = false;
+        this.radius = 7; // Explosion radius in blocks
+    }
+
+    update(world) {
+        if (this.exploded) return;
+
+        // Apply velocity
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // Apply gravity
+        this.vy += 0.05;
+
+        // Apply air resistance
+        this.vx *= 0.99;
+        this.vy *= 0.99;
+
+        // Check if hit ground (solid block)
+        const blockX = Math.floor(this.x);
+        const blockY = Math.floor(this.y);
+        const block = world.getBlock(blockX, blockY);
+
+        if (block && block.type !== BLOCK_TYPES.AIR) {
+            this.exploded = true;
+        }
+    }
+
+    // Calculate where the bomb will land (for preview)
+    predictLanding(world) {
+        let px = this.x;
+        let py = this.y;
+        let pvx = this.vx;
+        let pvy = this.vy;
+
+        // Simulate up to 300 frames
+        for (let i = 0; i < 300; i++) {
+            px += pvx;
+            py += pvy;
+            pvy += 0.05;
+            pvx *= 0.99;
+            pvy *= 0.99;
+
+            const blockX = Math.floor(px);
+            const blockY = Math.floor(py);
+
+            // Check bounds
+            if (blockY >= WORLD_HEIGHT || blockX < 0 || blockX >= WORLD_WIDTH) {
+                return { x: blockX, y: blockY };
+            }
+
+            const block = world.getBlock(blockX, blockY);
+            if (block && block.type !== BLOCK_TYPES.AIR) {
+                return { x: blockX, y: blockY };
+            }
+        }
+
+        return { x: Math.floor(px), y: Math.floor(py) };
+    }
+
+    render(ctx, camera) {
+        if (this.exploded) return;
+
+        const screenX = this.x * BLOCK_SIZE - camera.x;
+        const screenY = this.y * BLOCK_SIZE - camera.y;
+
+        // Draw bomb as a black circle
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw fuse/spark
+        ctx.fillStyle = '#ff0000';
+        ctx.beginPath();
+        ctx.arc(screenX - 2, screenY - 2, 2, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+// ========================================
 // AUDIO SYSTEM
 // ========================================
 class AudioSystem {
@@ -144,6 +233,7 @@ class Game {
         this.gameOver = false;
         this.victory = false;
         this.particles = [];
+        this.bombs = []; // Active thrown bombs
         this.audio = new AudioSystem();
         this.lastWarningTime = 0;
         this.hasLeftShopArea = true; // Track if player has moved away from shop
@@ -210,6 +300,7 @@ class Game {
         this.running = true;
         this.inShop = false; // Ensure not in shop
         this.particles = []; // Clear particles
+        this.bombs = []; // Clear bombs
 
         document.getElementById('start-menu').style.display = 'none';
         document.getElementById('game-screen').style.display = 'block';
@@ -270,6 +361,18 @@ class Game {
             this.particles[i].update();
             if (this.particles[i].life <= 0) {
                 this.particles.splice(i, 1);
+            }
+        }
+
+        // Update bombs
+        for (let i = this.bombs.length - 1; i >= 0; i--) {
+            const bomb = this.bombs[i];
+            bomb.update(this.world);
+
+            if (bomb.exploded) {
+                // Explode the bomb
+                this.explodeBomb(bomb);
+                this.bombs.splice(i, 1);
             }
         }
 
@@ -349,6 +452,38 @@ class Game {
         }
     }
 
+    explodeBomb(bomb) {
+        this.audio.playBomb();
+
+        const bombX = Math.floor(bomb.x);
+        const bombY = Math.floor(bomb.y);
+        const radius = bomb.radius;
+
+        // Destroy blocks in radius
+        for (let dx = -radius; dx <= radius; dx++) {
+            for (let dy = -radius; dy <= radius; dy++) {
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist <= radius) {
+                    const bx = bombX + dx;
+                    const by = bombY + dy;
+
+                    if (by >= SURFACE_LEVEL && by < WORLD_HEIGHT && bx >= 0 && bx < WORLD_WIDTH) {
+                        const block = this.world.getBlock(bx, by);
+                        if (block && block.type !== BLOCK_TYPES.UNBREAKABLE) {
+                            // Spawn particles for destroyed block
+                            const color = block.mineral ? block.mineral.color : '#8B7355';
+                            this.spawnParticles(bx, by, color, 3);
+                            this.world.removeBlock(bx, by);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Spawn explosion particles
+        this.spawnParticles(bombX, bombY, '#ff6600', 20);
+    }
+
     render() {
         // Fill background with black
         this.ctx.fillStyle = '#000';
@@ -366,6 +501,35 @@ class Game {
 
         // Render particles
         this.particles.forEach(particle => particle.render(this.ctx, this.camera));
+
+        // Render bombs and landing preview
+        this.bombs.forEach(bomb => {
+            // Draw landing preview
+            const landing = bomb.predictLanding(this.world);
+            const previewScreenX = landing.x * BLOCK_SIZE - this.camera.x;
+            const previewScreenY = landing.y * BLOCK_SIZE - this.camera.y;
+
+            // Draw preview circle
+            this.ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+            this.ctx.lineWidth = 2;
+            this.ctx.beginPath();
+            this.ctx.arc(previewScreenX + BLOCK_SIZE / 2, previewScreenY + BLOCK_SIZE / 2, bomb.radius * BLOCK_SIZE, 0, Math.PI * 2);
+            this.ctx.stroke();
+
+            // Draw crosshair at landing spot
+            this.ctx.strokeStyle = 'rgba(255, 0, 0, 0.7)';
+            this.ctx.lineWidth = 1;
+            const crossSize = 5;
+            this.ctx.beginPath();
+            this.ctx.moveTo(previewScreenX + BLOCK_SIZE / 2 - crossSize, previewScreenY + BLOCK_SIZE / 2);
+            this.ctx.lineTo(previewScreenX + BLOCK_SIZE / 2 + crossSize, previewScreenY + BLOCK_SIZE / 2);
+            this.ctx.moveTo(previewScreenX + BLOCK_SIZE / 2, previewScreenY + BLOCK_SIZE / 2 - crossSize);
+            this.ctx.lineTo(previewScreenX + BLOCK_SIZE / 2, previewScreenY + BLOCK_SIZE / 2 + crossSize);
+            this.ctx.stroke();
+
+            // Render bomb itself
+            bomb.render(this.ctx, this.camera);
+        });
 
         // Render player
         this.player.render(this.ctx, this.camera);
@@ -774,15 +938,15 @@ class Player {
             isThrusting = true; // Drilling also consumes fuel
         }
 
-        // Drop minerals
+        // Throw bomb with spacebar (requires arms upgrade)
         if (keys[' ']) {
-            this.dropMinerals();
+            this.throwBomb(game);
             keys[' '] = false;
         }
 
-        // Use bomb
+        // Drop minerals with 'b' key
         if (keys['b'] || keys['B']) {
-            this.useBomb(world, game);
+            this.dropMinerals();
             keys['b'] = false;
             keys['B'] = false;
         }
@@ -1064,6 +1228,32 @@ class Player {
                     }
                 }
             }
+        }
+    }
+
+    throwBomb(game) {
+        // Can only throw bombs if you have the arms upgrade
+        if (!this.upgrades.arms) {
+            return;
+        }
+
+        if (this.bombs > 0) {
+            this.bombs--;
+
+            // Calculate throw velocity - throw in direction of movement, or downward if stationary
+            const throwSpeed = 0.3;
+            let throwVx = this.vx * 2; // Inherit player's horizontal velocity
+            let throwVy = this.vy - 0.2; // Throw slightly upward/forward
+
+            // If mostly stationary, throw downward
+            if (Math.abs(this.vx) < 0.1 && Math.abs(this.vy) < 0.1) {
+                throwVx = 0;
+                throwVy = 0.3;
+            }
+
+            // Create and add bomb to game
+            const bomb = new Bomb(this.x, this.y, throwVx, throwVy);
+            game.bombs.push(bomb);
         }
     }
 
