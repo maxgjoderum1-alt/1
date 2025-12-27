@@ -1147,42 +1147,47 @@ class World {
         const rand = Math.random();
 
         // Define mineral probability based on depth
-        // Only valuable minerals: Iron, Bronze, Silver, Gold, Emerald, Diamond
-        // Deeper = rarer minerals more common
+        // null = dirt (can dig but not collect)
+        // Minerals: Iron, Bronze, Silver, Gold, Emerald, Diamond
+        // Deeper = less dirt, rarer minerals more common
 
-        // Shallow (0-500) - Iron and Bronze
+        // Shallow (0-500) - Mostly dirt, some Iron and Bronze
         if (depth < 500) {
-            if (rand < 0.7) return MINERALS.IRON;
-            if (rand < 0.95) return MINERALS.BRONZE;
+            if (rand < 0.6) return null; // 60% dirt
+            if (rand < 0.85) return MINERALS.IRON;
+            if (rand < 0.98) return MINERALS.BRONZE;
             return MINERALS.SILVER;
         }
 
-        // Medium (500-2000) - Bronze, Silver, some Gold
+        // Medium (500-2000) - Less dirt, Bronze, Silver, some Gold
         if (depth < 2000) {
-            if (rand < 0.4) return MINERALS.IRON;
-            if (rand < 0.7) return MINERALS.BRONZE;
-            if (rand < 0.9) return MINERALS.SILVER;
+            if (rand < 0.35) return null; // 35% dirt
+            if (rand < 0.6) return MINERALS.IRON;
+            if (rand < 0.8) return MINERALS.BRONZE;
+            if (rand < 0.95) return MINERALS.SILVER;
             return MINERALS.GOLD;
         }
 
-        // Deep (2000-5000) - Silver, Gold, Emerald
+        // Deep (2000-5000) - Little dirt, Silver, Gold, Emerald
         if (depth < 5000) {
-            if (rand < 0.15) return MINERALS.BRONZE;
-            if (rand < 0.5) return MINERALS.SILVER;
+            if (rand < 0.15) return null; // 15% dirt
+            if (rand < 0.25) return MINERALS.BRONZE;
+            if (rand < 0.55) return MINERALS.SILVER;
             if (rand < 0.8) return MINERALS.GOLD;
             if (rand < 0.95) return MINERALS.EMERALD;
             return MINERALS.DIAMOND;
         }
 
-        // Very Deep (5000-8000) - Gold, Emerald, Diamond
+        // Very Deep (5000-8000) - Almost no dirt, Gold, Emerald, Diamond
         if (depth < 8000) {
+            if (rand < 0.05) return null; // 5% dirt
             if (rand < 0.3) return MINERALS.SILVER;
             if (rand < 0.6) return MINERALS.GOLD;
             if (rand < 0.85) return MINERALS.EMERALD;
             return MINERALS.DIAMOND;
         }
 
-        // Extreme Depth (8000+) - Emerald and Diamond
+        // Extreme Depth (8000+) - No dirt, only precious minerals
         if (rand < 0.4) return MINERALS.GOLD;
         if (rand < 0.7) return MINERALS.EMERALD;
         return MINERALS.DIAMOND;
