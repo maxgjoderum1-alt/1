@@ -101,19 +101,35 @@ class Bomb {
         this.vx *= 0.99;
         this.vy *= 0.99;
 
-        // Apply velocity
+        // Store old position
+        const oldX = this.x;
+        const oldY = this.y;
+
+        // Apply horizontal velocity
         this.x += this.vx;
+
+        // Check horizontal collision
+        let blockX = Math.floor(this.x);
+        let blockY = Math.floor(this.y);
+        let block = world.getBlock(blockX, blockY);
+
+        if (block && block.type !== BLOCK_TYPES.AIR) {
+            // Hit wall horizontally, revert x and stop horizontal movement
+            this.x = oldX;
+            this.vx = 0;
+        }
+
+        // Apply vertical velocity
         this.y += this.vy;
 
-        // Collision detection - keep bomb in air, not inside blocks
-        const blockX = Math.floor(this.x);
-        const blockY = Math.floor(this.y);
-        const block = world.getBlock(blockX, blockY);
+        // Check vertical collision
+        blockX = Math.floor(this.x);
+        blockY = Math.floor(this.y);
+        block = world.getBlock(blockX, blockY);
 
-        // If bomb is inside a solid block, push it out
         if (block && block.type !== BLOCK_TYPES.AIR) {
-            // Push bomb up to sit on top of the block
-            this.y = blockY;
+            // Hit ground, push bomb to top of block
+            this.y = Math.floor(this.y);
             this.vy = 0;
             this.vx *= 0.8; // Friction when on ground
         }
