@@ -79,7 +79,9 @@ class Bomb {
         this.vx = vx;
         this.vy = vy;
         this.exploded = false;
-        this.radius = 7; // Explosion radius in blocks
+        this.radius = 4; // Explosion radius in blocks (reduced from 7)
+        this.createdTime = Date.now(); // Track when bomb was created
+        this.fuseTime = 1500; // 1.5 seconds in milliseconds
     }
 
     update(world) {
@@ -96,12 +98,9 @@ class Bomb {
         this.vx *= 0.99;
         this.vy *= 0.99;
 
-        // Check if hit ground (solid block)
-        const blockX = Math.floor(this.x);
-        const blockY = Math.floor(this.y);
-        const block = world.getBlock(blockX, blockY);
-
-        if (block && block.type !== BLOCK_TYPES.AIR) {
+        // Check if fuse timer has expired
+        const timeAlive = Date.now() - this.createdTime;
+        if (timeAlive >= this.fuseTime) {
             this.exploded = true;
         }
     }
