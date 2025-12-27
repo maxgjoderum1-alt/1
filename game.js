@@ -1576,18 +1576,18 @@ class World {
 
             if (y < SURFACE_LEVEL) {
                 // In the sky - fill everything outside playable area
-                // Left side: everything left of x=1
-                for (let x = startX; x < 1 && x < endX; x++) {
+                // Left side: everything left of x=0
+                for (let x = startX; x < 0 && x < endX; x++) {
                     const screenX = x * BLOCK_SIZE - camera.x;
                     drawRockBlock(screenX, screenY, y);
                 }
-                // Right side: everything right of x=59
-                for (let x = Math.max(WORLD_WIDTH - 1, startX); x < endX; x++) {
+                // Right side: everything right of x=60
+                for (let x = Math.max(WORLD_WIDTH, startX); x < endX; x++) {
                     const screenX = x * BLOCK_SIZE - camera.x;
                     drawRockBlock(screenX, screenY, y);
                 }
-            } else if (y > SURFACE_LEVEL + 10) {
-                // Deep underground only - vertical walls (not on surface grass/dirt)
+            } else if (y >= SURFACE_LEVEL) {
+                // Underground - vertical walls from surface down
                 // Left wall
                 for (let x = startX; x < 0 && x < endX; x++) {
                     const screenX = x * BLOCK_SIZE - camera.x;
