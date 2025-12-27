@@ -1229,14 +1229,9 @@ class World {
         // Determine block type based on depth
         let blockType;
 
-        if (depth < 20) {
+        if (depth < 500) {
+            // All shallow and medium depth: SOFT_EARTH only
             blockType = BLOCK_TYPES.SOFT_EARTH;
-        } else if (depth < 60) {
-            blockType = Math.random() < 0.7 ? BLOCK_TYPES.SOFT_EARTH : BLOCK_TYPES.HARD_ROCK;
-        } else if (depth < 120) {
-            blockType = Math.random() < 0.5 ? BLOCK_TYPES.HARD_ROCK : BLOCK_TYPES.VERY_HARD;
-        } else if (depth < 500) {
-            blockType = Math.random() < 0.3 ? BLOCK_TYPES.HARD_ROCK : BLOCK_TYPES.VERY_HARD;
         } else {
             // Deep mining (500+) - EXACTLY 2 BOMB_ROCK per line
             // Calculate deterministic positions for BOMB_ROCK based on y
@@ -1246,19 +1241,14 @@ class World {
             if (x === bombPos1 || x === bombPos2) {
                 blockType = BLOCK_TYPES.BOMB_ROCK; // Exactly 2 per line
             } else {
-                // Rest are normal hard rocks
-                blockType = Math.random() < 0.5 ? BLOCK_TYPES.HARD_ROCK : BLOCK_TYPES.VERY_HARD;
+                // Rest are SOFT_EARTH
+                blockType = BLOCK_TYPES.SOFT_EARTH;
             }
-        }
-
-        // Occasional unbreakable blocks deep down
-        if (depth > 80 && Math.random() < 0.02) {
-            blockType = BLOCK_TYPES.UNBREAKABLE;
         }
 
         // Determine mineral
         let mineral = null;
-        if (blockType !== BLOCK_TYPES.AIR && blockType !== BLOCK_TYPES.UNBREAKABLE && blockType !== BLOCK_TYPES.BOMB_ROCK) {
+        if (blockType !== BLOCK_TYPES.AIR && blockType !== BLOCK_TYPES.BOMB_ROCK) {
             mineral = this.generateMineral(depth);
         }
 
