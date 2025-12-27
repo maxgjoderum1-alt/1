@@ -191,10 +191,10 @@ class Game {
     }
 
     checkSaveGame() {
-        const saveData = localStorage.getItem('motherload-save');
-        if (saveData) {
-            document.getElementById('continue-btn').style.display = 'inline-block';
-        }
+        // Clear any old save data that might be corrupted
+        localStorage.removeItem('motherload-save');
+        // Save/load disabled - world too large (600,000 blocks)
+        document.getElementById('continue-btn').style.display = 'none';
     }
 
     newGame() {
@@ -330,10 +330,11 @@ class Game {
         this.camera.x = this.player.x * BLOCK_SIZE - this.width / 2;
         this.camera.y = this.player.y * BLOCK_SIZE - this.height / 2;
 
-        // Save game periodically
-        if (Math.random() < 0.01) {
-            this.saveGame();
-        }
+        // Auto-save disabled - world too large for localStorage (10,000 blocks deep)
+        // Manual save on shop close still works for smaller save data
+        // if (Math.random() < 0.01) {
+        //     this.saveGame();
+        // }
     }
 
     spawnParticles(x, y, color, count = 5) {
@@ -468,7 +469,7 @@ class Game {
         this.player.isOnSurface = false;
         this.hasLeftShopArea = false; // Player must move away before reopening
         document.getElementById('shop-overlay').style.display = 'none';
-        this.saveGame();
+        // this.saveGame(); // Disabled - world too large for localStorage
     }
 
     updateShopUI() {
