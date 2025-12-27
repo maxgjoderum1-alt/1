@@ -1024,7 +1024,7 @@ class Player {
         this.lastDrillTime = 0;
         this.drillCooldown = 300; // 300ms between drills
         this.lastDirection = 1; // Track last horizontal direction (1 = right, -1 = left)
-        this.selectedSlot = 1; // Hotbar slot selection (1, 2, or 3)
+        this.selectedSlot = 0; // Hotbar slot selection (0 = none, 1-3 = slot number)
 
         this.availableUpgrades = [
             { id: 'drill', name: 'Drill Power', description: 'Mine harder blocks (required for deep mining)', baseCost: 100, maxLevel: 5 },
@@ -1065,17 +1065,17 @@ class Player {
             isThrusting = true; // Drilling also consumes fuel
         }
 
-        // Hotbar slot selection
+        // Hotbar slot selection (toggle on/off)
         if (keys['1']) {
-            this.selectedSlot = 1;
+            this.selectedSlot = (this.selectedSlot === 1) ? 0 : 1;
             keys['1'] = false;
         }
         if (keys['2']) {
-            this.selectedSlot = 2;
+            this.selectedSlot = (this.selectedSlot === 2) ? 0 : 2;
             keys['2'] = false;
         }
         if (keys['3']) {
-            this.selectedSlot = 3;
+            this.selectedSlot = (this.selectedSlot === 3) ? 0 : 3;
             keys['3'] = false;
         }
 
