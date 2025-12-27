@@ -889,6 +889,10 @@ class Game {
         const repairCost = Math.ceil((this.player.maxHull - this.player.hull) * 2);
         const canRepair = repairCost > 0 && this.player.money >= repairCost;
 
+        const armsCost = 1000;
+        const hasArms = this.player.upgrades.arms;
+        const canBuyArms = !hasArms && this.player.money >= armsCost;
+
         section.innerHTML = `
             <h3>REPAIR & ITEMS</h3>
             <button class="shop-btn" id="repair-hull-dynamic-btn" ${!canRepair ? 'disabled' : ''}>
@@ -897,19 +901,36 @@ class Game {
             <button class="shop-btn" id="restock-bombs-btn">
                 RESTOCK BOMBS (Free)
             </button>
+            <button class="shop-btn" id="buy-arms-btn" ${hasArms || !canBuyArms ? 'disabled' : ''}>
+                ${hasArms ? 'ROBOT ARMS - OWNED' : `ROBOT ARMS - $${armsCost}`}
+            </button>
             <div style="color: #888; margin-top: 10px;">
                 Hull: ${Math.floor(this.player.hull)}/${this.player.maxHull}<br>
-                Bombs: ${this.player.bombs}/${this.player.maxBombs}
+                Bombs: ${this.player.bombs}/${this.player.maxBombs}<br>
+                ${hasArms ? 'Robot Arms: Equipped' : 'Robot Arms: Not Purchased'}
             </div>
         `;
 
         const repairBtn = document.getElementById('repair-hull-dynamic-btn');
         const bombsBtn = document.getElementById('restock-bombs-btn');
+        const armsBtn = document.getElementById('buy-arms-btn');
+
         if (repairBtn) repairBtn.addEventListener('click', () => this.repairHull());
         if (bombsBtn) bombsBtn.addEventListener('click', () => {
             this.player.bombs = this.player.maxBombs;
             this.updateShopUI();
         });
+        if (armsBtn) armsBtn.addEventListener('click', () => this.buyRobotArms());
+    }
+
+    buyRobotArms() {
+        const armsCost = 1000;
+        if (!this.player.upgrades.arms && this.player.money >= armsCost) {
+            this.player.money -= armsCost;
+            this.player.upgrades.arms = 1;
+            this.audio.playCollect();
+            this.updateShopUI();
+        }
     }
 
     renderUpgrades() {
@@ -1050,8 +1071,7 @@ class Player {
             { id: 'engine', name: 'Engine', description: 'Faster movement', baseCost: 60, maxLevel: 5 },
             { id: 'hull', name: 'Hull Armor', description: 'More durability', baseCost: 90, maxLevel: 5 },
             { id: 'cooling', name: 'Cooling System', description: 'Essential for deep mining', baseCost: 150, maxLevel: 5 },
-            { id: 'bombs', name: 'Bomb Capacity', description: 'Carry more bombs', baseCost: 120, maxLevel: 3 },
-            { id: 'arms', name: 'Robot Arms', description: 'Allows you to hold items like bombs and weapons', baseCost: 1000, maxLevel: 1 }
+            { id: 'bombs', name: 'Bomb Capacity', description: 'Carry more bombs', baseCost: 120, maxLevel: 3 }
         ];
     }
 
