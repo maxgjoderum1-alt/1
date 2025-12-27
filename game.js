@@ -199,7 +199,8 @@ class Game {
 
     newGame() {
         this.world = new World();
-        this.player = new Player(WORLD_WIDTH / 2, SURFACE_LEVEL - 2); // Start on surface
+        // Start player on TOP of surface blocks (surface is at y=5, block top is at 5.0, player center should be at 4.8)
+        this.player = new Player(WORLD_WIDTH / 2 + 0.5, SURFACE_LEVEL - 0.2); // Centered on block, standing on top
         this.currentShop = null;
         this.gameOver = false;
         this.victory = false;
