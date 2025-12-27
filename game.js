@@ -1092,7 +1092,7 @@ class Player {
         this.speed = 0.03; // Reduced from 0.04 for slower surface movement
         this.drillPower = 1;
         this.cooling = 0.5;
-        this.bombs = 3;
+        this.bombs = 0; // Start with no bombs - must restock with gold first
         this.maxBombs = 3;
         this.lastDrillTime = 0;
         this.drillCooldown = 300; // 300ms between drills
