@@ -855,10 +855,11 @@ class Player {
             return; // Still on cooldown
         }
 
-        // Find nearest block center
-        const centerX = Math.floor(this.x + 0.5);
-        const targetX = centerX;
-        const distToCenter = targetX - this.x;
+        // Find which block column player is in
+        const blockX = Math.floor(this.x);
+        // Block CENTER is at blockX + 0.5 (blocks go from X to X+1)
+        const blockCenterX = blockX + 0.5;
+        const distToCenter = blockCenterX - this.x;
 
         // MUST be reasonably centered to drill (within 0.2 blocks = 20% of block width)
         if (Math.abs(distToCenter) > 0.2) {
@@ -869,12 +870,12 @@ class Player {
 
         // Close to center - snap to exact center for perfect alignment
         if (Math.abs(distToCenter) > 0.02) {
-            this.x = targetX; // Snap to center
+            this.x = blockCenterX; // Snap to exact block center
         }
 
-        // Now drill directly below (player is centered)
+        // Now drill directly below (player is centered on block column)
         const blockY = Math.floor(this.y + 1);
-        const drilled = this.tryDrillBlock(world, game, centerX, blockY, 0, 0);
+        const drilled = this.tryDrillBlock(world, game, blockX, blockY, 0, 0);
 
         // Update last drill time if we drilled something
         if (drilled) {
@@ -935,8 +936,12 @@ class Player {
                     const block = world.getBlock(bx, by);
 
                     if (block && block.type !== BLOCK_TYPES.AIR) {
-                        const distX = Math.abs(this.x - bx);
-                        const distY = Math.abs(this.y - by);
+                        // Block center is at (bx + 0.5, by + 0.5)
+                        const blockCenterX = bx + 0.5;
+                        const blockCenterY = by + 0.5;
+
+                        const distX = Math.abs(this.x - blockCenterX);
+                        const distY = Math.abs(this.y - blockCenterY);
 
                         // SOLID horizontal collision - always resolve if overlapping
                         if (distX < 0.7 && distY < 0.7) {
@@ -946,8 +951,8 @@ class Player {
                             // Resolve horizontally ONLY if horizontal overlap is smaller
                             // This prevents resolving ground collision horizontally
                             if (overlapX > 0.001 && overlapX < overlapY) {
-                                // Push horizontally away from block
-                                this.x += (this.x > bx ? overlapX : -overlapX);
+                                // Push horizontally away from block center
+                                this.x += (this.x > blockCenterX ? overlapX : -overlapX);
                                 this.vx = 0;
                             }
                         }
@@ -974,16 +979,20 @@ class Player {
                     const block = world.getBlock(bx, by);
 
                     if (block && block.type !== BLOCK_TYPES.AIR) {
-                        const distX = Math.abs(this.x - bx);
-                        const distY = Math.abs(this.y - by);
+                        // Block center is at (bx + 0.5, by + 0.5)
+                        const blockCenterX = bx + 0.5;
+                        const blockCenterY = by + 0.5;
+
+                        const distX = Math.abs(this.x - blockCenterX);
+                        const distY = Math.abs(this.y - blockCenterY);
 
                         // Vertical collision check
                         if (distX < 0.7 && distY < 0.7) {
                             const overlapY = 0.7 - distY;
 
                             if (overlapY > 0) {
-                                // Push vertically away from block
-                                this.y += (this.y > by ? overlapY : -overlapY);
+                                // Push vertically away from block center
+                                this.y += (this.y > blockCenterY ? overlapY : -overlapY);
                                 this.vy = 0;
 
                                 // Damage on fast collisions
