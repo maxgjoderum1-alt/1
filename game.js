@@ -201,7 +201,7 @@ class Game {
     newGame() {
         this.world = new World();
         // Start player on TOP of surface blocks (surface is at y=5, block top is at 5.0, player center should be at 4.8)
-        this.player = new Player(WORLD_WIDTH / 2 + 0.5, SURFACE_LEVEL - 0.2); // Centered on block, standing on top
+        this.player = new Player(WORLD_WIDTH / 2 + 0.5, SURFACE_LEVEL - 0.5); // Centered on block, standing on top
         this.currentShop = null;
         this.gameOver = false;
         this.victory = false;
@@ -955,7 +955,10 @@ class Player {
                             if (overlapX > 0.001 && overlapX < overlapY) {
                                 // Push horizontally away from block center
                                 this.x += (this.x > blockCenterX ? overlapX : -overlapX);
-                                this.vx = 0;
+                                // Only stop velocity if moving INTO the wall
+                                if ((this.vx > 0 && this.x > blockCenterX) || (this.vx < 0 && this.x < blockCenterX)) {
+                                    this.vx = 0;
+                                }
                             }
                         }
                     }
@@ -990,17 +993,25 @@ class Player {
 
                         // Vertical collision check
                         if (distX < 0.7 && distY < 0.7) {
+                            const overlapX = 0.7 - distX;
                             const overlapY = 0.7 - distY;
 
-                            if (overlapY > 0) {
+                            // Only resolve vertically if vertical overlap is smaller OR equal
+                            if (overlapY > 0.001 && overlapY <= overlapX) {
                                 // Push vertically away from block center
                                 this.y += (this.y > blockCenterY ? overlapY : -overlapY);
-                                this.vy = 0;
 
-                                // Damage on fast collisions
-                                if (!collided && speed > 0.6) {
-                                    this.hull -= speed * 0.3;
-                                    collided = true;
+                                // Only stop downward velocity when landing on top of block
+                                if (this.vy > 0 && this.y > blockCenterY) {
+                                    this.vy = 0;
+                                    // Damage on fast collisions when landing
+                                    if (!collided && speed > 0.6) {
+                                        this.hull -= speed * 0.3;
+                                        collided = true;
+                                    }
+                                } else if (this.vy < 0 && this.y < blockCenterY) {
+                                    // Hitting ceiling from below
+                                    this.vy = 0;
                                 }
                             }
                         }
