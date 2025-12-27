@@ -855,17 +855,24 @@ class Player {
             return; // Still on cooldown
         }
 
-        // Center player in their column when drilling down
-        const centerX = Math.floor(this.x + 0.5); // Nearest block center
-        const targetX = centerX; // Center of that block
+        // Find nearest block center
+        const centerX = Math.floor(this.x + 0.5);
+        const targetX = centerX;
         const distToCenter = targetX - this.x;
 
-        // Pull player toward center (30% per drill for faster centering)
-        if (Math.abs(distToCenter) > 0.02) {
-            this.x += distToCenter * 0.3;
+        // MUST be reasonably centered to drill (within 0.2 blocks = 20% of block width)
+        if (Math.abs(distToCenter) > 0.2) {
+            // Not centered enough - pull strongly toward center instead of drilling
+            this.x += distToCenter * 0.5; // 50% pull when off-center
+            return; // Don't drill until centered
         }
 
-        // Drill block directly below
+        // Close to center - snap to exact center for perfect alignment
+        if (Math.abs(distToCenter) > 0.02) {
+            this.x = targetX; // Snap to center
+        }
+
+        // Now drill directly below (player is centered)
         const blockY = Math.floor(this.y + 1);
         const drilled = this.tryDrillBlock(world, game, centerX, blockY, 0, 0);
 
@@ -931,13 +938,14 @@ class Player {
                         const distX = Math.abs(this.x - bx);
                         const distY = Math.abs(this.y - by);
 
-                        // Check for horizontal overlap - no conditions, just pure collision
+                        // SOLID horizontal collision - always resolve if overlapping
                         if (distX < 0.7 && distY < 0.7) {
                             const overlapX = 0.7 - distX;
                             const overlapY = 0.7 - distY;
 
-                            // Only resolve horizontally if horizontal overlap is significant
-                            if (overlapX > 0.01 && overlapX <= overlapY) {
+                            // Resolve horizontally ONLY if horizontal overlap is smaller
+                            // This prevents resolving ground collision horizontally
+                            if (overlapX > 0.001 && overlapX < overlapY) {
                                 // Push horizontally away from block
                                 this.x += (this.x > bx ? overlapX : -overlapX);
                                 this.vx = 0;
