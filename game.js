@@ -1569,20 +1569,43 @@ class World {
             }
         };
 
-        // Fill left and right sides with mountains (only from y=0 downwards, not in sky)
-        for (let y = Math.max(0, startY); y < endY; y++) {
+        // Fill left and right sides with slanted mountains
+        // Mountains extend from surface upward into sky and downward underground
+        for (let y = Math.max(startY, -30); y < endY; y++) {
             const screenY = y * BLOCK_SIZE - camera.y;
 
-            // Left side (x < 0)
-            for (let x = startX; x < 0 && x < endX; x++) {
+            // Calculate mountain width based on height (slanted effect)
+            let mountainWidth = 0;
+            if (y < SURFACE_LEVEL) {
+                // Above surface - mountains slope outward as you go up
+                const heightAboveSurface = SURFACE_LEVEL - y;
+                mountainWidth = Math.floor(heightAboveSurface * 0.3); // Slope factor
+            }
+
+            // Left side mountain
+            for (let x = startX; x < mountainWidth && x < endX; x++) {
                 const screenX = x * BLOCK_SIZE - camera.x;
                 drawRockBlock(screenX, screenY, y);
             }
 
-            // Right side (x >= WORLD_WIDTH)
-            for (let x = Math.max(WORLD_WIDTH, startX); x < endX; x++) {
+            // Right side mountain
+            for (let x = Math.max(WORLD_WIDTH - mountainWidth, startX); x < endX; x++) {
                 const screenX = x * BLOCK_SIZE - camera.x;
                 drawRockBlock(screenX, screenY, y);
+            }
+
+            // Underground vertical walls (from surface down)
+            if (y >= SURFACE_LEVEL) {
+                // Left wall
+                for (let x = startX; x < 0 && x < endX; x++) {
+                    const screenX = x * BLOCK_SIZE - camera.x;
+                    drawRockBlock(screenX, screenY, y);
+                }
+                // Right wall
+                for (let x = Math.max(WORLD_WIDTH, startX); x < endX; x++) {
+                    const screenX = x * BLOCK_SIZE - camera.x;
+                    drawRockBlock(screenX, screenY, y);
+                }
             }
         }
 
