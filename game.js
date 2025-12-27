@@ -5,9 +5,9 @@
 // Constants
 const BLOCK_SIZE = 20;
 const WORLD_WIDTH = 60;
-const WORLD_HEIGHT = 200;
+const WORLD_HEIGHT = 10000;
 const SURFACE_LEVEL = 5;
-const VICTORY_DEPTH = 180;
+const VICTORY_DEPTH = 9000;
 
 // Shop locations on surface
 const SHOPS = {
@@ -147,7 +147,7 @@ class Game {
         this.lastWarningTime = 0;
         this.hasLeftShopArea = true; // Track if player has moved away from shop
         this.shopWaitStartTime = 0; // Track when player became stationary at shop
-        this.shopWaitDuration = 3000; // 3 seconds in milliseconds
+        this.shopWaitDuration = 2000; // 2 seconds in milliseconds
 
         this.setupEventListeners();
         this.checkSaveGame();
@@ -769,23 +769,39 @@ class Player {
         this.vx *= 0.84;
         this.vy *= 0.90;
 
-        // Clamp velocity
-        const maxVel = 1.0;
+        // Clamp velocity (reduced for safer collision)
+        const maxVel = 0.8;
         this.vx = Math.max(-maxVel, Math.min(maxVel, this.vx));
         this.vy = Math.max(-maxVel, Math.min(maxVel, this.vy));
+
+        // Store old position for collision revert
+        const oldX = this.x;
+        const oldY = this.y;
 
         // Move player
         this.x += this.vx;
         this.y += this.vy;
 
         // Collision with world boundaries
-        if (this.x < 1) this.x = 1;
-        if (this.x > WORLD_WIDTH - 2) this.x = WORLD_WIDTH - 2;
-        if (this.y < 0) this.y = 0;
-        if (this.y > WORLD_HEIGHT - 2) this.y = WORLD_HEIGHT - 2;
+        if (this.x < 1) {
+            this.x = 1;
+            this.vx = 0;
+        }
+        if (this.x > WORLD_WIDTH - 2) {
+            this.x = WORLD_WIDTH - 2;
+            this.vx = 0;
+        }
+        if (this.y < 0) {
+            this.y = 0;
+            this.vy = 0;
+        }
+        if (this.y > WORLD_HEIGHT - 2) {
+            this.y = WORLD_HEIGHT - 2;
+            this.vy = 0;
+        }
 
-        // Check collision with blocks
-        this.handleCollisions(world);
+        // Check collision with blocks (with revert on collision)
+        this.handleCollisions(world, oldX, oldY);
 
         // Fuel consumption - only when thrusting
         if (isThrusting) {
@@ -793,9 +809,16 @@ class Player {
             this.fuel = Math.max(0, this.fuel - fuelConsumption);
         }
 
-        // Heat mechanics - heat increases with depth
+        // Heat mechanics - heat starts at depth 500, scales to depth 10000
         const depth = Math.max(0, this.y - SURFACE_LEVEL);
-        const depthHeat = depth * 0.015; // Heat gain from depth
+
+        // No heat until depth 500
+        let depthHeat = 0;
+        if (depth >= 500) {
+            // Heat gradually increases from depth 500 to 10000
+            const heatDepth = Math.min(depth - 500, 9500); // 0 to 9500 range
+            depthHeat = (heatDepth / 9500) * 2.0; // Scales from 0 to 2.0
+        }
 
         // Natural cooling happens continuously
         const naturalCooling = this.cooling * 0.3;
@@ -879,12 +902,23 @@ class Player {
         return false;
     }
 
-    handleCollisions(world) {
+    handleCollisions(world, oldX, oldY) {
         const blockX = Math.floor(this.x);
         const blockY = Math.floor(this.y);
 
         let collided = false;
         const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+
+        // First check if player is inside a solid block
+        const centerBlock = world.getBlock(blockX, blockY);
+        if (centerBlock && centerBlock.type !== BLOCK_TYPES.AIR) {
+            // Player is inside a block - revert to old position
+            this.x = oldX;
+            this.y = oldY;
+            this.vx = 0;
+            this.vy = 0;
+            return;
+        }
 
         // Check surrounding blocks
         for (let dx = -1; dx <= 1; dx++) {
@@ -900,24 +934,21 @@ class Player {
                         const distX = Math.abs(this.x - bx);
                         const distY = Math.abs(this.y - by);
 
-                        if (distX < 0.6 && distY < 0.6) {
-                            // Push player away from block more forcefully
+                        if (distX < 0.5 && distY < 0.5) {
+                            // Collision detected - push player away more forcefully
                             if (distX > distY) {
-                                this.x += (this.x > bx ? 0.15 : -0.15);
-                                this.vx *= -0.6; // Stronger bounce-back
+                                // Horizontal collision
+                                this.x += (this.x > bx ? 0.2 : -0.2);
+                                this.vx = 0; // Stop horizontal movement
                             } else {
-                                this.y += (this.y > by ? 0.15 : -0.15);
-                                this.vy *= -0.6; // Stronger bounce-back
+                                // Vertical collision
+                                this.y += (this.y > by ? 0.2 : -0.2);
+                                this.vy = 0; // Stop vertical movement
                             }
 
-                            // Stop vertical velocity when hitting from below or above
-                            if (Math.abs(this.vy) > 0.3 && distY < distX) {
-                                this.vy = 0;
-                            }
-
-                            if (!collided && speed > 0.8) {
-                                // Damage on medium-speed collisions
-                                this.hull -= speed * 0.5;
+                            if (!collided && speed > 0.6) {
+                                // Damage on collisions
+                                this.hull -= speed * 0.3;
                                 collided = true;
                             }
                         }
