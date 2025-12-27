@@ -1202,14 +1202,16 @@ class World {
         } else if (depth < 500) {
             blockType = Math.random() < 0.3 ? BLOCK_TYPES.HARD_ROCK : BLOCK_TYPES.VERY_HARD;
         } else {
-            // Deep mining (500+) - introduce BOMB_ROCK
-            const rand = Math.random();
-            if (rand < 0.15) {
-                blockType = BLOCK_TYPES.BOMB_ROCK; // 15% bomb-only rock
-            } else if (rand < 0.45) {
-                blockType = BLOCK_TYPES.HARD_ROCK; // 30% hard rock
+            // Deep mining (500+) - EXACTLY 2 BOMB_ROCK per line
+            // Calculate deterministic positions for BOMB_ROCK based on y
+            const bombPos1 = (y * 17) % WORLD_WIDTH;
+            const bombPos2 = (y * 23 + 7) % WORLD_WIDTH;
+
+            if (x === bombPos1 || x === bombPos2) {
+                blockType = BLOCK_TYPES.BOMB_ROCK; // Exactly 2 per line
             } else {
-                blockType = BLOCK_TYPES.VERY_HARD; // 55% very hard
+                // Rest are normal hard rocks
+                blockType = Math.random() < 0.5 ? BLOCK_TYPES.HARD_ROCK : BLOCK_TYPES.VERY_HARD;
             }
         }
 
