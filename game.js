@@ -200,8 +200,9 @@ class Game {
 
     newGame() {
         this.world = new World();
-        // Start player on TOP of surface blocks (surface is at y=5, block top is at 5.0, player center should be at 4.8)
-        this.player = new Player(WORLD_WIDTH / 2 + 0.5, SURFACE_LEVEL - 0.5); // Centered on block, standing on top
+        // Start player on TOP of surface blocks (surface is at y=5, center at 5.5)
+        // Player at 4.85 gives distY=0.65, which is < 0.7 collision threshold
+        this.player = new Player(WORLD_WIDTH / 2 + 0.5, SURFACE_LEVEL - 0.15); // Centered on block, standing on top
         this.currentShop = null;
         this.gameOver = false;
         this.victory = false;
