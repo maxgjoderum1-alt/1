@@ -1586,8 +1586,8 @@ class World {
                     const screenX = x * BLOCK_SIZE - camera.x;
                     drawRockBlock(screenX, screenY, y);
                 }
-            } else {
-                // Underground - vertical walls
+            } else if (y > SURFACE_LEVEL + 10) {
+                // Deep underground only - vertical walls (not on surface grass/dirt)
                 // Left wall
                 for (let x = startX; x < 0 && x < endX; x++) {
                     const screenX = x * BLOCK_SIZE - camera.x;
