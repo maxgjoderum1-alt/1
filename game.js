@@ -1273,19 +1273,21 @@ class World {
         // Minerals: Bronze, Silver, Gold, Emerald, Diamond (Iron removed)
         // Deeper = less dirt, rarer minerals more common
 
-        // Shallow (0-500) - Mostly dirt, some Bronze
+        // Shallow (0-500) - 84% dirt, 14% bronze, 1% silver, 1% gold
         if (depth < 500) {
-            if (rand < 0.85) return null; // 85% dirt
-            if (rand < 0.98) return MINERALS.BRONZE;
-            return MINERALS.SILVER;
+            if (rand < 0.84) return null; // 84% dirt
+            if (rand < 0.98) return MINERALS.BRONZE; // 14% bronze
+            if (rand < 0.99) return MINERALS.SILVER; // 1% silver
+            return MINERALS.GOLD; // 1% gold
         }
 
-        // Medium (500-2000) - More dirt, less minerals
+        // Medium (500-2000) - 78% dirt, 10% bronze, 10% silver, 1% gold, 1% emerald
         if (depth < 2000) {
-            if (rand < 0.80) return null; // 80% dirt
-            if (rand < 0.90) return MINERALS.BRONZE;
-            if (rand < 0.97) return MINERALS.SILVER;
-            return MINERALS.GOLD;
+            if (rand < 0.78) return null; // 78% dirt
+            if (rand < 0.88) return MINERALS.BRONZE; // 10% bronze
+            if (rand < 0.98) return MINERALS.SILVER; // 10% silver
+            if (rand < 0.99) return MINERALS.GOLD; // 1% gold
+            return MINERALS.EMERALD; // 1% emerald
         }
 
         // Deep (2000-5000) - Little dirt, Bronze, Silver, Gold, Emerald
