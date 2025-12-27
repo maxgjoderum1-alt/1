@@ -812,12 +812,13 @@ class Player {
         this.handleVerticalCollisions(world);
 
         // Collision with world boundaries
-        if (this.x < 1) {
-            this.x = 1;
+        // Allow player to reach edge blocks (need to be at x=0.5 for block 0, x=59.5 for block 59)
+        if (this.x < 0.5) {
+            this.x = 0.5;
             this.vx = 0;
         }
-        if (this.x > WORLD_WIDTH - 2) {
-            this.x = WORLD_WIDTH - 2;
+        if (this.x > WORLD_WIDTH - 0.5) {
+            this.x = WORLD_WIDTH - 0.5;
             this.vx = 0;
         }
         if (this.y < 0) {
