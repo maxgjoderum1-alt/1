@@ -898,10 +898,10 @@ class Game {
         const armsCost = armsBaseCost * Math.pow(2, armsLevel);
         const canUpgradeArms = armsLevel < armsMaxLevel && this.player.money >= armsCost;
 
-        // Bomb restock cost (1 gold block = $150)
-        const bombRestockCost = 150;
+        // Bomb restock cost (1 gold mineral from inventory)
         const needsBombRestock = this.player.bombs < this.player.maxBombs;
-        const canRestockBombs = needsBombRestock && this.player.money >= bombRestockCost;
+        const hasGoldInCargo = this.player.cargo.some(mineral => mineral.name === 'Gold');
+        const canRestockBombs = needsBombRestock && hasGoldInCargo;
 
         let armsButtonHTML = '';
         if (armsLevel >= armsMaxLevel) {
@@ -952,12 +952,19 @@ class Game {
     }
 
     restockBombs() {
-        const bombRestockCost = 150; // Cost of 1 gold block
-        if (this.player.bombs < this.player.maxBombs && this.player.money >= bombRestockCost) {
-            this.player.money -= bombRestockCost;
-            this.player.bombs = this.player.maxBombs;
-            this.audio.playCollect();
-            this.updateShopUI();
+        // Find and remove 1 gold mineral from cargo
+        if (this.player.bombs < this.player.maxBombs) {
+            const goldIndex = this.player.cargo.findIndex(mineral => mineral.name === 'Gold');
+            if (goldIndex !== -1) {
+                // Remove the gold mineral from cargo
+                const goldMineral = this.player.cargo.splice(goldIndex, 1)[0];
+                this.player.cargoWeight -= goldMineral.weight;
+
+                // Restock bombs
+                this.player.bombs = this.player.maxBombs;
+                this.audio.playCollect();
+                this.updateShopUI();
+            }
         }
     }
 
