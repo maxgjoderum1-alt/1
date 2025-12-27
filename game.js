@@ -201,8 +201,9 @@ class Game {
     newGame() {
         this.world = new World();
         // Start player on TOP of surface blocks (surface is at y=5, center at 5.5)
-        // Player at 4.85 gives distY=0.65, which is < 0.7 collision threshold
-        this.player = new Player(WORLD_WIDTH / 2 + 0.5, SURFACE_LEVEL - 0.15); // Centered on block, standing on top
+        // Player visual size is 1.0 blocks (20px), so visual bottom at player.y + 0.5
+        // At y=4.5, visual bottom = 5.0 (exactly on block top)
+        this.player = new Player(WORLD_WIDTH / 2 + 0.5, SURFACE_LEVEL - 0.5); // Centered on block, standing on top
         this.currentShop = null;
         this.gameOver = false;
         this.victory = false;
@@ -946,10 +947,11 @@ class Player {
                         const distX = Math.abs(this.x - blockCenterX);
                         const distY = Math.abs(this.y - blockCenterY);
 
-                        // SOLID horizontal collision - always resolve if overlapping
-                        if (distX < 0.7 && distY < 0.7) {
-                            const overlapX = 0.7 - distX;
-                            const overlapY = 0.7 - distY;
+                        // SOLID horizontal collision - player visual size is 20px (1.0 blocks)
+                        // Collision threshold: 0.5 (block radius) + 0.5 (player visual radius) = 1.0
+                        if (distX < 1.0 && distY < 1.0) {
+                            const overlapX = 1.0 - distX;
+                            const overlapY = 1.0 - distY;
 
                             // Resolve horizontally ONLY if horizontal overlap is smaller
                             // This prevents resolving ground collision horizontally
@@ -992,10 +994,11 @@ class Player {
                         const distX = Math.abs(this.x - blockCenterX);
                         const distY = Math.abs(this.y - blockCenterY);
 
-                        // Vertical collision check
-                        if (distX < 0.7 && distY < 0.7) {
-                            const overlapX = 0.7 - distX;
-                            const overlapY = 0.7 - distY;
+                        // Vertical collision check - player visual size is 20px (1.0 blocks)
+                        // Collision threshold: 0.5 (block radius) + 0.5 (player visual radius) = 1.0
+                        if (distX < 1.0 && distY < 1.0) {
+                            const overlapX = 1.0 - distX;
+                            const overlapY = 1.0 - distY;
 
                             // Only resolve vertically if vertical overlap is smaller OR equal
                             if (overlapY > 0.001 && overlapY <= overlapX) {
