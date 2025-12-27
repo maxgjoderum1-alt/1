@@ -977,7 +977,7 @@ class Player {
         this.cargoWeight = 0;
         this.maxCargo = 50;
 
-        this.money = 50; // Starting money for first upgrade
+        this.money = 2000; // Starting money
         this.upgrades = {};
         this.isOnSurface = false;
 
