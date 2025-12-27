@@ -757,11 +757,11 @@ class Player {
 
         // Handle input with momentum (supports both Arrow keys and WASD)
         if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
-            this.vx -= this.speed;
+            this.vx -= this.speed * 0.5; // Slower horizontal movement
             isThrusting = true;
         }
         if (keys['ArrowRight'] || keys['d'] || keys['D']) {
-            this.vx += this.speed;
+            this.vx += this.speed * 0.5; // Slower horizontal movement
             isThrusting = true;
         }
         if (keys['ArrowUp'] || keys['w'] || keys['W']) {
