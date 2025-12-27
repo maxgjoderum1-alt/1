@@ -850,12 +850,22 @@ class Player {
             return; // Still on cooldown
         }
 
-        // Only drill directly below the player (no diagonal drilling)
-        const blockX = Math.floor(this.x);
-        const blockY = Math.floor(this.y + 1);
+        // Drill blocks below and around player center (no diagonal - only straight down/sides)
+        const centerX = Math.floor(this.x + 0.5); // Round to nearest block
+        const blockY = Math.floor(this.y + 1); // Directly below
 
-        // Try drilling the block directly below
-        const drilled = this.tryDrillBlock(world, game, blockX, blockY, 0, 0);
+        let drilled = false;
+
+        // Try center block first
+        drilled = this.tryDrillBlock(world, game, centerX, blockY, 0, 0);
+
+        // If no block at center, try the block player is actually standing in
+        if (!drilled) {
+            const actualX = Math.floor(this.x);
+            if (actualX !== centerX) {
+                drilled = this.tryDrillBlock(world, game, actualX, blockY, 0, 0);
+            }
+        }
 
         // Update last drill time if we drilled something
         if (drilled) {
@@ -932,12 +942,13 @@ class Player {
 
                             if (overlapX > 0 && overlapY > 0) {
                                 // Collision detected - resolve by smallest overlap
-                                if (overlapX < overlapY) {
-                                    // Push horizontally
+                                // Prefer vertical resolution (standing on ground) unless clearly horizontal
+                                if (overlapX < overlapY * 0.7) {
+                                    // Push horizontally (only if significantly more horizontal than vertical)
                                     this.x += (this.x > bx ? overlapX : -overlapX);
                                     this.vx = 0; // Stop horizontal velocity
                                 } else {
-                                    // Push vertically
+                                    // Push vertically (default for ground collisions)
                                     this.y += (this.y > by ? overlapY : -overlapY);
                                     this.vy = 0; // Stop vertical velocity
                                 }
