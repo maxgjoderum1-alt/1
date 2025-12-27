@@ -1128,9 +1128,23 @@ class Player {
             ctx.globalAlpha = 1;
         }
 
-        // Draw drill
+        // Draw drill as triangle (shakes when drilling)
         ctx.fillStyle = '#888';
-        ctx.fillRect(screenX - 6, screenY + 10, 12, 8);
+
+        // Check if currently drilling (within cooldown period)
+        const isDrilling = Date.now() - this.lastDrillTime < this.drillCooldown;
+
+        // Add shake effect when drilling
+        const shakeX = isDrilling ? (Math.random() - 0.5) * 3 : 0;
+        const shakeY = isDrilling ? (Math.random() - 0.5) * 2 : 0;
+
+        // Draw triangle drill bit
+        ctx.beginPath();
+        ctx.moveTo(screenX - 6 + shakeX, screenY + 10 + shakeY); // Left corner
+        ctx.lineTo(screenX + 6 + shakeX, screenY + 10 + shakeY); // Right corner
+        ctx.lineTo(screenX + shakeX, screenY + 18 + shakeY); // Bottom point
+        ctx.closePath();
+        ctx.fill();
 
         // Draw windows
         ctx.fillStyle = '#00aaff';
