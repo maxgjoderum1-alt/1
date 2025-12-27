@@ -1186,6 +1186,62 @@ class World {
             ctx.textAlign = 'center';
             ctx.fillText(shopType[0], shopScreenX, shopScreenY - 15);
         }
+
+        // Draw mountain walls at world edges
+        const leftWallX = 0 * BLOCK_SIZE - camera.x;
+        const rightWallX = WORLD_WIDTH * BLOCK_SIZE - camera.x;
+
+        // Left wall
+        if (leftWallX > -100 && leftWallX < ctx.canvas.width + 100) {
+            for (let y = Math.max(0, startY); y < Math.min(WORLD_HEIGHT, endY); y++) {
+                const screenY = y * BLOCK_SIZE - camera.y;
+                const depth = y - SURFACE_LEVEL;
+
+                // Rock pattern - varying shades
+                const variation = (y % 3) * 0.1;
+                const baseColor = depth < 0 ? [101, 67, 33] : [85, 85, 85]; // Brown above, gray below
+                const darkening = Math.min(0.7, Math.max(0, depth) / WORLD_HEIGHT);
+
+                ctx.fillStyle = `rgb(${baseColor[0] * (1 - darkening + variation)}, ${baseColor[1] * (1 - darkening + variation)}, ${baseColor[2] * (1 - darkening + variation)})`;
+                ctx.fillRect(leftWallX, screenY, BLOCK_SIZE, BLOCK_SIZE);
+
+                // Add texture lines
+                if (y % 2 === 0) {
+                    ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(leftWallX, screenY);
+                    ctx.lineTo(leftWallX + BLOCK_SIZE, screenY);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        // Right wall
+        if (rightWallX > -100 && rightWallX < ctx.canvas.width + 100) {
+            for (let y = Math.max(0, startY); y < Math.min(WORLD_HEIGHT, endY); y++) {
+                const screenY = y * BLOCK_SIZE - camera.y;
+                const depth = y - SURFACE_LEVEL;
+
+                // Rock pattern - varying shades
+                const variation = (y % 3) * 0.1;
+                const baseColor = depth < 0 ? [101, 67, 33] : [85, 85, 85]; // Brown above, gray below
+                const darkening = Math.min(0.7, Math.max(0, depth) / WORLD_HEIGHT);
+
+                ctx.fillStyle = `rgb(${baseColor[0] * (1 - darkening + variation)}, ${baseColor[1] * (1 - darkening + variation)}, ${baseColor[2] * (1 - darkening + variation)})`;
+                ctx.fillRect(rightWallX - BLOCK_SIZE, screenY, BLOCK_SIZE, BLOCK_SIZE);
+
+                // Add texture lines
+                if (y % 2 === 0) {
+                    ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(rightWallX - BLOCK_SIZE, screenY);
+                    ctx.lineTo(rightWallX, screenY);
+                    ctx.stroke();
+                }
+            }
+        }
     }
 
     hexToRgb(hex) {
