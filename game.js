@@ -1129,6 +1129,13 @@ class Player {
             ctx.globalAlpha = 1;
         }
 
+        // Draw arms (small rectangles on each side)
+        ctx.fillStyle = '#666';
+        // Left arm
+        ctx.fillRect(screenX - 13, screenY - 2, 3, 8);
+        // Right arm
+        ctx.fillRect(screenX + 10, screenY - 2, 3, 8);
+
         // Draw drill as triangle (shakes when drilling)
         ctx.fillStyle = '#888';
 
