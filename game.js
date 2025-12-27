@@ -606,13 +606,14 @@ class Game {
             this.ctx.setLineDash([]); // Reset to solid line
         }
 
-        // Render hotbar with 3 slots (bottom center of screen)
-        const slotSize = 30;
-        const slotSpacing = 5;
-        const hotbarStartX = this.width / 2 - (slotSize * 3 + slotSpacing * 2) / 2;
-        const hotbarY = this.height - 50;
+        // Render hotbar with 3 slots (only if player has robot arms)
+        if (this.player.upgrades.arms) {
+            const slotSize = 30;
+            const slotSpacing = 5;
+            const hotbarStartX = this.width / 2 - (slotSize * 3 + slotSpacing * 2) / 2;
+            const hotbarY = this.height - 50;
 
-        for (let slot = 1; slot <= 3; slot++) {
+            for (let slot = 1; slot <= 3; slot++) {
             const slotX = hotbarStartX + (slot - 1) * (slotSize + slotSpacing);
 
             // Slot background
@@ -654,6 +655,7 @@ class Game {
                 this.ctx.font = 'bold 10px monospace';
                 this.ctx.textAlign = 'right';
                 this.ctx.fillText(this.player.bombs, slotX + 27, hotbarY + 27);
+            }
             }
         }
     }
