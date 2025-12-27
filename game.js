@@ -753,7 +753,7 @@ class Player {
             isThrusting = true;
         }
         if (keys['ArrowUp'] || keys['w'] || keys['W']) {
-            this.vy -= this.speed * 1.5;
+            this.vy -= this.speed * 2.5; // Increased from 1.5 to overcome gravity (0.05)
             isThrusting = true;
         }
         if (keys['ArrowDown'] || keys['s'] || keys['S']) {
@@ -850,20 +850,12 @@ class Player {
             return; // Still on cooldown
         }
 
+        // Only drill directly below the player (no diagonal drilling)
         const blockX = Math.floor(this.x);
         const blockY = Math.floor(this.y + 1);
 
-        // Also check blocks to the sides if moving horizontally
-        const sideBlockX = Math.floor(this.x + Math.sign(this.vx) * 0.6);
-        const sideBlockY = Math.floor(this.y);
-
-        // Try drilling down first
-        let drilled = this.tryDrillBlock(world, game, blockX, blockY, 0, 0);
-
-        // If moving sideways, also drill in that direction
-        if (!drilled && Math.abs(this.vx) > 0.2) {
-            drilled = this.tryDrillBlock(world, game, sideBlockX, sideBlockY, 0, 0);
-        }
+        // Try drilling the block directly below
+        const drilled = this.tryDrillBlock(world, game, blockX, blockY, 0, 0);
 
         // Update last drill time if we drilled something
         if (drilled) {
@@ -943,21 +935,11 @@ class Player {
                                 if (overlapX < overlapY) {
                                     // Push horizontally
                                     this.x += (this.x > bx ? overlapX : -overlapX);
-                                    // Stop horizontal velocity on collision
-                                    if (Math.abs(this.vx) > 0.35) {
-                                        this.vx *= -0.3; // Bounce only if moving very fast
-                                    } else {
-                                        this.vx = 0; // Just stop for normal movement
-                                    }
+                                    this.vx = 0; // Stop horizontal velocity
                                 } else {
-                                    // Push vertically (same logic as horizontal)
+                                    // Push vertically
                                     this.y += (this.y > by ? overlapY : -overlapY);
-                                    // Stop vertical velocity on collision
-                                    if (Math.abs(this.vy) > 0.35) {
-                                        this.vy *= -0.3; // Bounce only if moving very fast
-                                    } else {
-                                        this.vy = 0; // Just stop for normal movement
-                                    }
+                                    this.vy = 0; // Stop vertical velocity
                                 }
 
                                 if (!collided && speed > 0.6) {
