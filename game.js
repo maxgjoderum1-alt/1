@@ -931,20 +931,16 @@ class Player {
                         const distX = Math.abs(this.x - bx);
                         const distY = Math.abs(this.y - by);
 
-                        // Only check horizontal collision if it's clearly a SIDE collision
-                        // (horizontal distance is smaller than vertical distance)
-                        if (distX < 0.7 && distY < 0.7 && distX < distY) {
+                        // Check for horizontal overlap - no conditions, just pure collision
+                        if (distX < 0.7 && distY < 0.7) {
                             const overlapX = 0.7 - distX;
+                            const overlapY = 0.7 - distY;
 
-                            if (overlapX > 0) {
-                                // Only push if moving INTO the block
-                                const movingIntoBlock = (this.x > bx && this.vx < 0) || (this.x < bx && this.vx > 0);
-
-                                if (movingIntoBlock || Math.abs(this.vx) > 0.2) {
-                                    // Push horizontally away from block
-                                    this.x += (this.x > bx ? overlapX : -overlapX);
-                                    this.vx = 0;
-                                }
+                            // Only resolve horizontally if horizontal overlap is significant
+                            if (overlapX > 0.01 && overlapX <= overlapY) {
+                                // Push horizontally away from block
+                                this.x += (this.x > bx ? overlapX : -overlapX);
+                                this.vx = 0;
                             }
                         }
                     }
