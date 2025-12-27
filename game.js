@@ -543,35 +543,45 @@ class Game {
             }
             this.ctx.stroke();
 
-            // Draw landing preview
-            const landing = bomb.predictLanding(this.world);
-            const previewScreenX = landing.x * BLOCK_SIZE - this.camera.x;
-            const previewScreenY = landing.y * BLOCK_SIZE - this.camera.y;
-
-            // Draw preview circle
-            this.ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
-            this.ctx.lineWidth = 2;
-            this.ctx.beginPath();
-            this.ctx.arc(previewScreenX + BLOCK_SIZE / 2, previewScreenY + BLOCK_SIZE / 2, bomb.radius * BLOCK_SIZE, 0, Math.PI * 2);
-            this.ctx.stroke();
-
-            // Draw crosshair at landing spot
-            this.ctx.strokeStyle = 'rgba(255, 0, 0, 0.7)';
-            this.ctx.lineWidth = 1;
-            const crossSize = 5;
-            this.ctx.beginPath();
-            this.ctx.moveTo(previewScreenX + BLOCK_SIZE / 2 - crossSize, previewScreenY + BLOCK_SIZE / 2);
-            this.ctx.lineTo(previewScreenX + BLOCK_SIZE / 2 + crossSize, previewScreenY + BLOCK_SIZE / 2);
-            this.ctx.moveTo(previewScreenX + BLOCK_SIZE / 2, previewScreenY + BLOCK_SIZE / 2 - crossSize);
-            this.ctx.lineTo(previewScreenX + BLOCK_SIZE / 2, previewScreenY + BLOCK_SIZE / 2 + crossSize);
-            this.ctx.stroke();
-
             // Render bomb itself
             bomb.render(this.ctx, this.camera);
         });
 
         // Render player
         this.player.render(this.ctx, this.camera);
+
+        // Render hotbar (bottom center of screen)
+        if (this.player.upgrades.arms && this.player.bombs > 0) {
+            const hotbarX = this.width / 2 - 20;
+            const hotbarY = this.height - 60;
+
+            // Hotbar background
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            this.ctx.fillRect(hotbarX, hotbarY, 40, 40);
+
+            // Hotbar border
+            this.ctx.strokeStyle = '#888';
+            this.ctx.lineWidth = 2;
+            this.ctx.strokeRect(hotbarX, hotbarY, 40, 40);
+
+            // Draw bomb icon in hotbar
+            this.ctx.fillStyle = '#000';
+            this.ctx.beginPath();
+            this.ctx.arc(hotbarX + 20, hotbarY + 20, 8, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            // Draw fuse on bomb icon
+            this.ctx.fillStyle = '#ff0000';
+            this.ctx.beginPath();
+            this.ctx.arc(hotbarX + 15, hotbarY + 15, 3, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            // Draw bomb count
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = 'bold 12px monospace';
+            this.ctx.textAlign = 'right';
+            this.ctx.fillText(this.player.bombs, hotbarX + 36, hotbarY + 36);
+        }
     }
 
     updateUI() {
