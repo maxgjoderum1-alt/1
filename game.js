@@ -278,19 +278,19 @@ class Game {
         const now = Date.now();
 
         if (this.player.y <= SURFACE_LEVEL && !this.inShop) {
-            // Check if player is near any shop
+            // Check if player is standing on shop platform blocks
             let nearAnyShop = false;
             let nearestShop = null;
-            let nearestDistance = Infinity;
+
+            const playerBlockX = Math.floor(this.player.x);
 
             for (const [shopType, shop] of Object.entries(SHOPS)) {
-                const distance = Math.abs(this.player.x - shop.x);
-                if (distance < 2) {
+                // Player must stand on one of the 2 blocks under the shop
+                // Shop at x=N has blocks at (N, SURFACE_LEVEL) and (N+1, SURFACE_LEVEL)
+                if (playerBlockX === shop.x || playerBlockX === shop.x + 1) {
                     nearAnyShop = true;
-                    if (distance < nearestDistance) {
-                        nearestDistance = distance;
-                        nearestShop = shopType;
-                    }
+                    nearestShop = shopType;
+                    break; // Found the shop
                 }
             }
 
@@ -1184,6 +1184,26 @@ class World {
         // Surface is air
         if (y < SURFACE_LEVEL) {
             return { type: BLOCK_TYPES.AIR, mineral: null };
+        }
+
+        // SHOP PLATFORMS - 2 BOMB_ROCK blocks under each shop at surface level
+        if (y === SURFACE_LEVEL) {
+            // FUEL shop at x=10: blocks (10,5) and (11,5)
+            if (x === 10 || x === 11) {
+                return { type: BLOCK_TYPES.BOMB_ROCK, mineral: null };
+            }
+            // SELL shop at x=20: blocks (20,5) and (21,5)
+            if (x === 20 || x === 21) {
+                return { type: BLOCK_TYPES.BOMB_ROCK, mineral: null };
+            }
+            // UPGRADE shop at x=40: blocks (40,5) and (41,5)
+            if (x === 40 || x === 41) {
+                return { type: BLOCK_TYPES.BOMB_ROCK, mineral: null };
+            }
+            // REPAIR shop at x=50: blocks (50,5) and (51,5)
+            if (x === 50 || x === 51) {
+                return { type: BLOCK_TYPES.BOMB_ROCK, mineral: null };
+            }
         }
 
         // CAVE GENERATION - Random air pockets underground
