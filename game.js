@@ -504,6 +504,45 @@ class Game {
 
         // Render bombs and landing preview
         this.bombs.forEach(bomb => {
+            // Draw flight trajectory line
+            this.ctx.strokeStyle = 'rgba(255, 255, 0, 0.6)';
+            this.ctx.lineWidth = 2;
+            this.ctx.beginPath();
+
+            let px = bomb.x;
+            let py = bomb.y;
+            let pvx = bomb.vx;
+            let pvy = bomb.vy;
+
+            // Start from bomb position
+            let startX = px * BLOCK_SIZE - this.camera.x;
+            let startY = py * BLOCK_SIZE - this.camera.y;
+            this.ctx.moveTo(startX, startY);
+
+            // Simulate trajectory and draw line
+            for (let i = 0; i < 100; i += 5) {
+                px += pvx * 5;
+                py += pvy * 5;
+                pvy += 0.05 * 5;
+                pvx *= 0.99;
+                pvy *= 0.99;
+
+                const screenX = px * BLOCK_SIZE - this.camera.x;
+                const screenY = py * BLOCK_SIZE - this.camera.y;
+                this.ctx.lineTo(screenX, screenY);
+
+                // Stop if hit ground
+                const blockX = Math.floor(px);
+                const blockY = Math.floor(py);
+                if (blockY >= 0 && blockY < WORLD_HEIGHT && blockX >= 0 && blockX < WORLD_WIDTH) {
+                    const block = this.world.getBlock(blockX, blockY);
+                    if (block && block.type !== BLOCK_TYPES.AIR) {
+                        break;
+                    }
+                }
+            }
+            this.ctx.stroke();
+
             // Draw landing preview
             const landing = bomb.predictLanding(this.world);
             const previewScreenX = landing.x * BLOCK_SIZE - this.camera.x;
@@ -1240,15 +1279,19 @@ class Player {
         if (this.bombs > 0) {
             this.bombs--;
 
-            // Calculate throw velocity - throw in direction of movement, or downward if stationary
-            const throwSpeed = 0.3;
+            // Calculate throw velocity - throw in direction of movement
             let throwVx = this.vx * 2; // Inherit player's horizontal velocity
-            let throwVy = this.vy - 0.2; // Throw slightly upward/forward
+            let throwVy = this.vy - 0.2; // Throw slightly upward
 
-            // If mostly stationary, throw downward
+            // If mostly stationary, throw horizontally (slightly right)
             if (Math.abs(this.vx) < 0.1 && Math.abs(this.vy) < 0.1) {
-                throwVx = 0;
-                throwVy = 0.3;
+                throwVx = 0.3; // Throw right
+                throwVy = -0.1; // Slight upward arc
+            }
+
+            // Never allow downward throws - ensure vy is always upward or neutral
+            if (throwVy > 0) {
+                throwVy = -0.1; // Force slight upward throw
             }
 
             // Create and add bomb to game
