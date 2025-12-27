@@ -1265,7 +1265,7 @@ class World {
 
         // Shallow (0-500) - Mostly dirt, some Bronze
         if (depth < 500) {
-            if (rand < 0.85) return null; // 85% dirt (was 60% dirt + 25% iron)
+            if (rand < 0.80) return null; // 80% dirt
             if (rand < 0.98) return MINERALS.BRONZE;
             return MINERALS.SILVER;
         }
@@ -1364,6 +1364,20 @@ class World {
 
                 ctx.fillStyle = color;
                 ctx.fillRect(screenX, screenY, BLOCK_SIZE, BLOCK_SIZE);
+
+                // Draw glow effect for minerals to make them stand out
+                if (block.mineral && block.type !== BLOCK_TYPES.UNBREAKABLE) {
+                    // Bright border/outline
+                    ctx.strokeStyle = block.mineral.color;
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(screenX + 1, screenY + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
+
+                    // Subtle inner glow
+                    ctx.globalAlpha = 0.3;
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(screenX + 2, screenY + 2, BLOCK_SIZE - 4, BLOCK_SIZE - 4);
+                    ctx.globalAlpha = 1.0;
+                }
 
                 // Draw grid for unbreakable blocks
                 if (block.type === BLOCK_TYPES.UNBREAKABLE) {
