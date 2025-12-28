@@ -38,6 +38,121 @@ const BLOCK_TYPES = {
 };
 
 // ========================================
+// BOSS CLASS
+// ========================================
+class Boss {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.vx = 0.05; // Walking speed
+        this.vy = 0;
+        this.width = 3; // 3 blocks wide
+        this.height = 4; // 4 blocks tall
+        this.health = 300;
+        this.maxHealth = 300;
+        this.direction = 1; // 1 = right, -1 = left
+        this.alive = true;
+    }
+
+    update(world) {
+        if (!this.alive) return;
+
+        // Apply gravity
+        this.vy += 0.05;
+
+        // Move horizontally
+        this.x += this.vx * this.direction;
+
+        // Check for walls or edges - turn around
+        const leftEdge = Math.floor(this.x - this.width / 2);
+        const rightEdge = Math.floor(this.x + this.width / 2);
+        const bottomY = Math.floor(this.y + this.height / 2);
+
+        // Check if hit wall or edge
+        if (leftEdge < 20 || rightEdge > 40) {
+            this.direction *= -1; // Turn around
+        }
+
+        // Apply vertical movement
+        this.y += this.vy;
+
+        // Simple ground collision
+        const groundY = 505 + 2; // Boss arena floor level
+        if (this.y + this.height / 2 > groundY) {
+            this.y = groundY - this.height / 2;
+            this.vy = 0;
+        }
+    }
+
+    takeDamage(damage) {
+        if (!this.alive) return;
+
+        this.health -= damage;
+        if (this.health <= 0) {
+            this.health = 0;
+            this.alive = false;
+        }
+    }
+
+    render(ctx, camera) {
+        if (!this.alive) return;
+
+        const screenX = this.x * BLOCK_SIZE - camera.x;
+        const screenY = this.y * BLOCK_SIZE - camera.y;
+        const width = this.width * BLOCK_SIZE;
+        const height = this.height * BLOCK_SIZE;
+
+        // Draw boss body (dark red)
+        ctx.fillStyle = '#8B0000';
+        ctx.fillRect(screenX - width / 2, screenY - height / 2, width, height);
+
+        // Draw boss eyes
+        ctx.fillStyle = '#ff0000';
+        const eyeSize = 8;
+        ctx.fillRect(screenX - width / 4 - eyeSize / 2, screenY - height / 4, eyeSize, eyeSize);
+        ctx.fillRect(screenX + width / 4 - eyeSize / 2, screenY - height / 4, eyeSize, eyeSize);
+
+        // Draw boss mouth
+        ctx.fillStyle = '#000';
+        ctx.fillRect(screenX - width / 3, screenY + height / 6, width * 2 / 3, 4);
+
+        // Draw health bar
+        const barWidth = width;
+        const barHeight = 6;
+        const barX = screenX - barWidth / 2;
+        const barY = screenY - height / 2 - 15;
+
+        // Background (red)
+        ctx.fillStyle = '#400';
+        ctx.fillRect(barX, barY, barWidth, barHeight);
+
+        // Health (green to red gradient based on health)
+        const healthPercent = this.health / this.maxHealth;
+        const healthWidth = barWidth * healthPercent;
+
+        if (healthPercent > 0.5) {
+            ctx.fillStyle = '#0f0';
+        } else if (healthPercent > 0.25) {
+            ctx.fillStyle = '#ff0';
+        } else {
+            ctx.fillStyle = '#f00';
+        }
+        ctx.fillRect(barX, barY, healthWidth, barHeight);
+
+        // Border
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(barX, barY, barWidth, barHeight);
+
+        // Health text
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 10px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${this.health}/${this.maxHealth}`, screenX, barY - 4);
+    }
+}
+
+// ========================================
 // PARTICLE SYSTEM
 // ========================================
 class Particle {
@@ -278,6 +393,7 @@ class Game {
         this.victory = false;
         this.particles = [];
         this.bombs = []; // Active thrown bombs
+        this.boss = null; // Boss instance
         this.audio = new AudioSystem();
         this.lastWarningTime = 0;
         this.needsDrillUpgradeWarning = false; // Show warning when trying to drill gold without upgrade
@@ -421,6 +537,16 @@ class Game {
             }
         }
 
+        // Spawn boss when player reaches depth 500
+        if (!this.boss && this.player.y > 505) {
+            this.boss = new Boss(30, 505); // Spawn in middle of arena
+        }
+
+        // Update boss
+        if (this.boss && this.boss.alive) {
+            this.boss.update(this.world);
+        }
+
         // Check proximity to shops - only when on surface and stationary
         const speed = Math.sqrt(this.player.vx * this.player.vx + this.player.vy * this.player.vy);
         const now = Date.now();
@@ -525,6 +651,21 @@ class Game {
             }
         }
 
+        // Check if boss is in explosion radius
+        if (this.boss && this.boss.alive) {
+            const distToBoss = Math.sqrt(
+                Math.pow(bomb.x - this.boss.x, 2) +
+                Math.pow(bomb.y - this.boss.y, 2)
+            );
+
+            // If boss is within explosion radius, deal damage
+            if (distToBoss <= radius) {
+                this.boss.takeDamage(100);
+                // Extra particles for hitting boss
+                this.spawnParticles(this.boss.x, this.boss.y, '#ff0000', 15);
+            }
+        }
+
         // Spawn explosion particles
         this.spawnParticles(bombX, bombY, '#ff6600', 20);
     }
@@ -555,6 +696,11 @@ class Game {
 
         // Render player
         this.player.render(this.ctx, this.camera);
+
+        // Render boss
+        if (this.boss) {
+            this.boss.render(this.ctx, this.camera);
+        }
 
         // Draw bomb trajectory preview (if player has arms, bombs, and slot 1 selected)
         const armsLevel = this.player.upgrades.arms || 0;
@@ -1690,6 +1836,26 @@ class World {
             }
             // REPAIR shop at x=50: blocks (49,5) and (50,5)
             if (x === 49 || x === 50) {
+                return { type: BLOCK_TYPES.UNBREAKABLE, mineral: null };
+            }
+        }
+
+        // BOSS ARENA at depth 500 (y = 505-508)
+        const bossDepth = 500;
+        const bossY = SURFACE_LEVEL + bossDepth;
+
+        if (y >= bossY && y <= bossY + 3 && x >= 20 && x <= 40) {
+            // Arena floor (2 blocks thick)
+            if (y === bossY + 2 || y === bossY + 3) {
+                return { type: BLOCK_TYPES.BOMB_ROCK, mineral: null };
+            }
+            // Arena air space
+            return { type: BLOCK_TYPES.AIR, mineral: null };
+        }
+
+        // Boss arena walls (UNBREAKABLE blocks at edges)
+        if (y >= bossY && y <= bossY + 10) {
+            if (x === 19 || x === 41) {
                 return { type: BLOCK_TYPES.UNBREAKABLE, mineral: null };
             }
         }
