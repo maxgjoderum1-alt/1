@@ -394,6 +394,7 @@ class Game {
         this.particles = [];
         this.bombs = []; // Active thrown bombs
         this.boss = null; // Boss instance
+        this.bossFloorRemoved = false; // Track if boss arena floor has been removed
         this.audio = new AudioSystem();
         this.lastWarningTime = 0;
         this.needsDrillUpgradeWarning = false; // Show warning when trying to drill gold without upgrade
@@ -545,6 +546,21 @@ class Game {
         // Update boss
         if (this.boss && this.boss.alive) {
             this.boss.update(this.world);
+        }
+
+        // Remove UNBREAKABLE floor when boss is defeated
+        if (this.boss && !this.boss.alive && !this.bossFloorRemoved) {
+            const bossFloorY = 115; // Boss arena floor level
+            // Remove floor blocks across entire arena width
+            for (let x = 0; x < WORLD_WIDTH; x++) {
+                const block = this.world.getBlock(x, bossFloorY);
+                if (block && block.type === BLOCK_TYPES.UNBREAKABLE) {
+                    this.world.setBlock(x, bossFloorY, BLOCK_TYPES.AIR, null);
+                }
+            }
+            this.bossFloorRemoved = true; // Mark as processed
+            // Spawn celebration particles
+            this.spawnParticles(this.boss.x, this.boss.y, '#FFD700', 30);
         }
 
         // Check proximity to shops - only when on surface and stationary
