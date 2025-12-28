@@ -1196,6 +1196,14 @@ class Game {
         const hasGoldInCargo = this.player.cargo.some(mineral => mineral.name === 'Gold');
         const canRestockBombs = needsBombRestock && hasGoldInCargo;
 
+        // Weapon purchase options
+        const ak47Cost = 5000;
+        const m4Cost = 7500;
+        const ammoReloadCost = 100; // Cost per full reload
+        const canBuyAK = !this.player.weapon && this.player.money >= ak47Cost;
+        const canBuyM4 = !this.player.weapon && this.player.money >= m4Cost;
+        const canReloadAmmo = this.player.weapon && this.player.ammo < this.player.maxAmmo && this.player.money >= ammoReloadCost;
+
         let armsButtonHTML = '';
         if (armsLevel >= armsMaxLevel) {
             armsButtonHTML = `<button class="shop-btn" disabled>ROBOT ARMS - MAX LEVEL</button>`;
@@ -1214,20 +1222,44 @@ class Game {
                 RESTOCK BOMBS - 1 Gold
             </button>
             ${armsButtonHTML}
+            <h4 style="margin-top: 15px; color: #ff9900;">WEAPONS</h4>
+            ${!this.player.weapon ? `
+                <button class="shop-btn" id="buy-ak47-btn" ${!canBuyAK ? 'disabled' : ''}>
+                    AK-47 - $${ak47Cost}
+                </button>
+                <button class="shop-btn" id="buy-m4-btn" ${!canBuyM4 ? 'disabled' : ''}>
+                    M4A1 - $${m4Cost}
+                </button>
+            ` : `
+                <button class="shop-btn" disabled>
+                    ${this.player.weapon === 'ak47' ? 'AK-47' : 'M4A1'} - OWNED
+                </button>
+                <button class="shop-btn" id="reload-ammo-btn" ${!canReloadAmmo ? 'disabled' : ''}>
+                    RELOAD AMMO - $${ammoReloadCost}
+                </button>
+            `}
             <div style="color: #888; margin-top: 10px;">
                 Hull: ${Math.floor(this.player.hull)}/${this.player.maxHull}<br>
                 Bombs: ${this.player.bombs}/${this.player.maxBombs}<br>
-                Robot Arms: Level ${armsLevel}/${armsMaxLevel} (${armsLevel} slots)
+                Robot Arms: Level ${armsLevel}/${armsMaxLevel} (${armsLevel} slots)<br>
+                Weapon: ${this.player.weapon ? (this.player.weapon === 'ak47' ? 'AK-47' : 'M4A1') : 'None'}<br>
+                Ammo: ${this.player.ammo}/${this.player.maxAmmo}
             </div>
         `;
 
         const repairBtn = document.getElementById('repair-hull-dynamic-btn');
         const bombsBtn = document.getElementById('restock-bombs-btn');
         const armsBtn = document.getElementById('upgrade-arms-btn');
+        const ak47Btn = document.getElementById('buy-ak47-btn');
+        const m4Btn = document.getElementById('buy-m4-btn');
+        const reloadBtn = document.getElementById('reload-ammo-btn');
 
         if (repairBtn) repairBtn.addEventListener('click', () => this.repairHull());
         if (bombsBtn) bombsBtn.addEventListener('click', () => this.restockBombs());
         if (armsBtn) armsBtn.addEventListener('click', () => this.upgradeRobotArms());
+        if (ak47Btn) ak47Btn.addEventListener('click', () => this.buyWeapon('ak47', ak47Cost));
+        if (m4Btn) m4Btn.addEventListener('click', () => this.buyWeapon('m4', m4Cost));
+        if (reloadBtn) reloadBtn.addEventListener('click', () => this.reloadAmmo(ammoReloadCost));
     }
 
     upgradeRobotArms() {
@@ -1258,6 +1290,25 @@ class Game {
                 this.audio.playCollect();
                 this.updateShopUI();
             }
+        }
+    }
+
+    buyWeapon(weaponType, cost) {
+        if (!this.player.weapon && this.player.money >= cost) {
+            this.player.money -= cost;
+            this.player.weapon = weaponType;
+            this.player.ammo = this.player.maxAmmo; // Start with full ammo
+            this.audio.playCollect();
+            this.updateShopUI();
+        }
+    }
+
+    reloadAmmo(cost) {
+        if (this.player.weapon && this.player.ammo < this.player.maxAmmo && this.player.money >= cost) {
+            this.player.money -= cost;
+            this.player.ammo = this.player.maxAmmo;
+            this.audio.playCollect();
+            this.updateShopUI();
         }
     }
 
@@ -1387,6 +1438,9 @@ class Player {
         this.cooling = 0.5;
         this.bombs = 0; // Start with no bombs - must restock with gold first
         this.maxBombs = 3;
+        this.weapon = null; // Current weapon equipped (null, 'ak47', or 'm4')
+        this.ammo = 0; // Weapon ammo
+        this.maxAmmo = 120; // Max ammo capacity
         this.lastDrillTime = 0;
         this.drillCooldown = 300; // 300ms between drills
         this.lastDirection = 1; // Track last horizontal direction (1 = right, -1 = left)
@@ -1516,7 +1570,7 @@ class Player {
 
         // Fuel consumption - when using WASD/arrow keys
         if (isThrusting) {
-            const fuelConsumption = 0.05 + Math.abs(this.vx) * 0.01 + Math.abs(this.vy) * 0.01;
+            const fuelConsumption = 0.03 + Math.abs(this.vx) * 0.01 + Math.abs(this.vy) * 0.01; // Reduced from 0.05 to 0.03
             this.fuel = Math.max(0, this.fuel - fuelConsumption);
         }
 
@@ -1599,7 +1653,7 @@ class Player {
                     this.vx += vxPush;
                     this.vy += vyPush;
                     this.heat += 1.5; // Drilling generates heat
-                    this.fuel -= 0.15; // Drilling uses fuel
+                    this.fuel -= 0.10; // Drilling uses fuel (reduced from 0.15)
 
                     // Visual and audio feedback
                     const color = block.mineral ? block.mineral.color : '#654321';
