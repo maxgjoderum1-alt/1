@@ -41,17 +41,21 @@ const BLOCK_TYPES = {
 // BOSS CLASS
 // ========================================
 class Boss {
-    constructor(x, y) {
+    constructor(x, y, maxHealth, groundY, canJump = false) {
         this.x = x;
         this.y = y;
         this.vx = 0.05; // Walking speed
         this.vy = 0;
         this.width = 3; // 3 blocks wide
         this.height = 4; // 4 blocks tall
-        this.health = 300;
-        this.maxHealth = 300;
+        this.health = maxHealth;
+        this.maxHealth = maxHealth;
         this.direction = 1; // 1 = right, -1 = left
         this.alive = true;
+        this.groundY = groundY; // Floor level for this boss arena
+        this.canJump = canJump; // Can this boss jump?
+        this.jumpCooldown = 0; // Frames until next jump allowed
+        this.onGround = false; // Is boss on ground?
     }
 
     update(world) {
@@ -66,7 +70,6 @@ class Boss {
         // Check for walls or edges - turn around
         const leftEdge = Math.floor(this.x - this.width / 2);
         const rightEdge = Math.floor(this.x + this.width / 2);
-        const bottomY = Math.floor(this.y + this.height / 2);
 
         // Check if hit wall or edge (arena is full width: x=0 to x=60)
         if (leftEdge <= 1 || rightEdge >= 59) {
@@ -76,11 +79,27 @@ class Boss {
         // Apply vertical movement
         this.y += this.vy;
 
-        // Simple ground collision (arena floor at y=115)
-        const groundY = 115; // Boss arena floor level
-        if (this.y + this.height / 2 > groundY) {
-            this.y = groundY - this.height / 2;
+        // Ground collision
+        if (this.y + this.height / 2 > this.groundY) {
+            this.y = this.groundY - this.height / 2;
             this.vy = 0;
+            this.onGround = true;
+        } else {
+            this.onGround = false;
+        }
+
+        // Jumping mechanics (only for boss 2)
+        if (this.canJump && this.onGround && this.jumpCooldown <= 0) {
+            // Jump randomly (20% chance each frame when on ground)
+            if (Math.random() < 0.02) {
+                this.vy = -1.2; // Jump velocity
+                this.jumpCooldown = 120; // 2 seconds cooldown (60 fps)
+            }
+        }
+
+        // Decrease jump cooldown
+        if (this.jumpCooldown > 0) {
+            this.jumpCooldown--;
         }
     }
 
@@ -393,8 +412,10 @@ class Game {
         this.victory = false;
         this.particles = [];
         this.bombs = []; // Active thrown bombs
-        this.boss = null; // Boss instance
+        this.boss = null; // First boss instance (500m depth)
         this.bossFloorRemoved = false; // Track if boss arena floor has been removed
+        this.boss2 = null; // Second boss instance (2000m depth)
+        this.boss2FloorRemoved = false; // Track if boss 2 arena floor has been removed
         this.audio = new AudioSystem();
         this.lastWarningTime = 0;
         this.needsDrillUpgradeWarning = false; // Show warning when trying to drill gold without upgrade
@@ -538,19 +559,29 @@ class Game {
             }
         }
 
-        // Spawn boss when player reaches depth 500m (y > 105)
+        // Spawn boss 1 when player reaches depth 500m (y > 105)
         if (!this.boss && this.player.y > 105) {
-            this.boss = new Boss(30, 110); // Spawn in middle of arena (x=30, y=110)
+            this.boss = new Boss(30, 110, 300, 115, false); // Boss 1: 300 HP, floor at y=115, no jump
         }
 
-        // Update boss
+        // Spawn boss 2 when player reaches depth 2000m (y > 405)
+        if (!this.boss2 && this.player.y > 405) {
+            this.boss2 = new Boss(30, 410, 1000, 415, true); // Boss 2: 1000 HP, floor at y=415, can jump
+        }
+
+        // Update boss 1
         if (this.boss && this.boss.alive) {
             this.boss.update(this.world);
         }
 
-        // Remove UNBREAKABLE floor when boss is defeated
+        // Update boss 2
+        if (this.boss2 && this.boss2.alive) {
+            this.boss2.update(this.world);
+        }
+
+        // Remove UNBREAKABLE floor when boss 1 is defeated
         if (this.boss && !this.boss.alive && !this.bossFloorRemoved) {
-            const bossFloorY = 115; // Boss arena floor level
+            const bossFloorY = 115; // Boss 1 arena floor level
             // Remove floor blocks across entire arena width
             for (let x = 0; x < WORLD_WIDTH; x++) {
                 const block = this.world.getBlock(x, bossFloorY);
@@ -561,6 +592,21 @@ class Game {
             this.bossFloorRemoved = true; // Mark as processed
             // Spawn celebration particles
             this.spawnParticles(this.boss.x, this.boss.y, '#FFD700', 30);
+        }
+
+        // Remove UNBREAKABLE floor when boss 2 is defeated
+        if (this.boss2 && !this.boss2.alive && !this.boss2FloorRemoved) {
+            const boss2FloorY = 415; // Boss 2 arena floor level
+            // Remove floor blocks across entire arena width
+            for (let x = 0; x < WORLD_WIDTH; x++) {
+                const block = this.world.getBlock(x, boss2FloorY);
+                if (block && block.type === BLOCK_TYPES.UNBREAKABLE) {
+                    this.world.setBlock(x, boss2FloorY, BLOCK_TYPES.AIR, null);
+                }
+            }
+            this.boss2FloorRemoved = true; // Mark as processed
+            // Spawn celebration particles
+            this.spawnParticles(this.boss2.x, this.boss2.y, '#FFD700', 30);
         }
 
         // Check proximity to shops - only when on surface and stationary
@@ -667,7 +713,7 @@ class Game {
             }
         }
 
-        // Check if boss is in explosion radius
+        // Check if boss 1 is in explosion radius
         if (this.boss && this.boss.alive) {
             const distToBoss = Math.sqrt(
                 Math.pow(bomb.x - this.boss.x, 2) +
@@ -679,6 +725,21 @@ class Game {
                 this.boss.takeDamage(100);
                 // Extra particles for hitting boss
                 this.spawnParticles(this.boss.x, this.boss.y, '#ff0000', 15);
+            }
+        }
+
+        // Check if boss 2 is in explosion radius
+        if (this.boss2 && this.boss2.alive) {
+            const distToBoss2 = Math.sqrt(
+                Math.pow(bomb.x - this.boss2.x, 2) +
+                Math.pow(bomb.y - this.boss2.y, 2)
+            );
+
+            // If boss 2 is within explosion radius, deal damage
+            if (distToBoss2 <= radius) {
+                this.boss2.takeDamage(100);
+                // Extra particles for hitting boss
+                this.spawnParticles(this.boss2.x, this.boss2.y, '#ff0000', 15);
             }
         }
 
@@ -713,9 +774,14 @@ class Game {
         // Render player
         this.player.render(this.ctx, this.camera);
 
-        // Render boss
+        // Render boss 1
         if (this.boss) {
             this.boss.render(this.ctx, this.camera);
+        }
+
+        // Render boss 2
+        if (this.boss2) {
+            this.boss2.render(this.ctx, this.camera);
         }
 
         // Draw bomb trajectory preview (if player has arms, bombs, and slot 1 selected)
@@ -1856,20 +1922,39 @@ class World {
             }
         }
 
-        // BOSS ARENA at depth 500m (y = 105-115) - FULL WIDTH CHAMBER
+        // BOSS ARENA 1 at depth 500m (y = 105-115) - FULL WIDTH CHAMBER
         // Depth calculation: (y - SURFACE_LEVEL) * 5 = depth in meters
         // So for 500m: (y - 5) * 5 = 500 → y = 105
-        const bossDepth = 100; // y offset from surface
-        const bossY = SURFACE_LEVEL + bossDepth; // y = 105
+        const boss1Depth = 100; // y offset from surface
+        const boss1Y = SURFACE_LEVEL + boss1Depth; // y = 105
 
-        // Create full-width boss arena chamber (entire playable area, 10 blocks tall)
-        if (y >= bossY && y <= bossY + 10 && x >= 0 && x < WORLD_WIDTH) {
-            // Arena floor (UNBREAKABLE - can't be destroyed)
-            if (y === bossY + 10) {
+        // Create full-width boss 1 arena chamber (entire playable area, 10 blocks tall)
+        if (y >= boss1Y && y <= boss1Y + 10 && x >= 0 && x < WORLD_WIDTH) {
+            // Arena floor (UNBREAKABLE - can't be destroyed until boss defeated)
+            if (y === boss1Y + 10) {
                 return { type: BLOCK_TYPES.UNBREAKABLE, mineral: null };
             }
             // Arena ceiling (BOMB_ROCK for visual distinction)
-            if (y === bossY) {
+            if (y === boss1Y) {
+                return { type: BLOCK_TYPES.BOMB_ROCK, mineral: null };
+            }
+            // Arena air space (big open room for boss fight)
+            return { type: BLOCK_TYPES.AIR, mineral: null };
+        }
+
+        // BOSS ARENA 2 at depth 2000m (y = 405-415) - FULL WIDTH CHAMBER
+        // For 2000m: (y - 5) * 5 = 2000 → y = 405
+        const boss2Depth = 400; // y offset from surface
+        const boss2Y = SURFACE_LEVEL + boss2Depth; // y = 405
+
+        // Create full-width boss 2 arena chamber (entire playable area, 10 blocks tall)
+        if (y >= boss2Y && y <= boss2Y + 10 && x >= 0 && x < WORLD_WIDTH) {
+            // Arena floor (UNBREAKABLE - can't be destroyed until boss defeated)
+            if (y === boss2Y + 10) {
+                return { type: BLOCK_TYPES.UNBREAKABLE, mineral: null };
+            }
+            // Arena ceiling (BOMB_ROCK for visual distinction)
+            if (y === boss2Y) {
                 return { type: BLOCK_TYPES.BOMB_ROCK, mineral: null };
             }
             // Arena air space (big open room for boss fight)
