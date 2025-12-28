@@ -1899,9 +1899,9 @@ class World {
 
                 // Sign
                 ctx.fillStyle = '#fff';
-                ctx.fillRect(shopScreenX - 12, shopScreenY - 35, 24, 8);
+                ctx.fillRect(shopScreenX - 16, shopScreenY - 38, 32, 12);
                 ctx.fillStyle = '#000';
-                ctx.font = 'bold 6px monospace';
+                ctx.font = 'bold 9px monospace';
                 ctx.textAlign = 'center';
                 ctx.fillText('FUEL', shopScreenX, shopScreenY - 29);
 
@@ -1925,10 +1925,12 @@ class World {
                 ctx.fillRect(shopScreenX + 9, shopScreenY - 15, 8, 8);
 
                 // Sign
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(shopScreenX - 16, shopScreenY - 40, 32, 12);
                 ctx.fillStyle = '#000';
-                ctx.font = 'bold 6px monospace';
+                ctx.font = 'bold 9px monospace';
                 ctx.textAlign = 'center';
-                ctx.fillText('SELL', shopScreenX, shopScreenY - 30);
+                ctx.fillText('SELL', shopScreenX, shopScreenY - 31);
 
             } else if (shopType === 'UPGRADE') {
                 // UPGRADE CENTER - Workshop style
@@ -1952,9 +1954,9 @@ class World {
 
                 // Sign
                 ctx.fillStyle = '#fff';
-                ctx.fillRect(shopScreenX - 15, shopScreenY - 40, 30, 8);
+                ctx.fillRect(shopScreenX - 22, shopScreenY - 43, 44, 12);
                 ctx.fillStyle = '#000';
-                ctx.font = 'bold 5px monospace';
+                ctx.font = 'bold 9px monospace';
                 ctx.textAlign = 'center';
                 ctx.fillText('UPGRADE', shopScreenX, shopScreenY - 34);
 
@@ -1982,9 +1984,9 @@ class World {
 
                 // Sign
                 ctx.fillStyle = '#fff';
-                ctx.fillRect(shopScreenX - 14, shopScreenY - 36, 28, 8);
+                ctx.fillRect(shopScreenX - 20, shopScreenY - 39, 40, 12);
                 ctx.fillStyle = '#000';
-                ctx.font = 'bold 6px monospace';
+                ctx.font = 'bold 9px monospace';
                 ctx.textAlign = 'center';
                 ctx.fillText('REPAIR', shopScreenX, shopScreenY - 30);
             }
