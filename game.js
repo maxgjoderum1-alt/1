@@ -1933,16 +1933,27 @@ class World {
         // Minerals: Bronze, Silver, Gold, Emerald, Diamond (Iron removed)
         // Deeper = less dirt, rarer minerals more common
 
-        // Shallow (0-500) - 84.5% dirt, 14% bronze, 1% silver, 0.5% gold
-        if (depth < 500) {
+        // Shallow (0-110) - 84.5% dirt, 14% bronze, 1% silver, 0.5% gold
+        // This is before the boss arena (depth 110 = y 115 = boss floor)
+        if (depth < 110) {
             if (rand < 0.845) return null; // 84.5% dirt
             if (rand < 0.985) return MINERALS.BRONZE; // 14% bronze
             if (rand < 0.995) return MINERALS.SILVER; // 1% silver
             return MINERALS.GOLD; // 0.5% gold
         }
 
+        // Post-Boss (110-500) - Right after boss floor, diamonds start appearing at 1%
+        // 83.5% dirt, 13% bronze, 1% silver, 1% gold, 0.5% emerald, 1% diamond
+        if (depth < 500) {
+            if (rand < 0.835) return null; // 83.5% dirt
+            if (rand < 0.965) return MINERALS.BRONZE; // 13% bronze
+            if (rand < 0.975) return MINERALS.SILVER; // 1% silver
+            if (rand < 0.985) return MINERALS.GOLD; // 1% gold
+            if (rand < 0.99) return MINERALS.EMERALD; // 0.5% emerald
+            return MINERALS.DIAMOND; // 1% diamond
+        }
+
         // Medium (500-2000) - 77% dirt, 10% bronze, 10% silver, 1% gold, 1% emerald, 1% diamond
-        // This is right after boss arena floor - diamonds start appearing at 1%
         if (depth < 2000) {
             if (rand < 0.77) return null; // 77% dirt
             if (rand < 0.87) return MINERALS.BRONZE; // 10% bronze
