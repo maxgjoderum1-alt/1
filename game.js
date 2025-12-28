@@ -68,16 +68,16 @@ class Boss {
         const rightEdge = Math.floor(this.x + this.width / 2);
         const bottomY = Math.floor(this.y + this.height / 2);
 
-        // Check if hit wall or edge
-        if (leftEdge < 20 || rightEdge > 40) {
+        // Check if hit wall or edge (arena is x=15 to x=45)
+        if (leftEdge <= 15 || rightEdge >= 45) {
             this.direction *= -1; // Turn around
         }
 
         // Apply vertical movement
         this.y += this.vy;
 
-        // Simple ground collision
-        const groundY = 505 + 2; // Boss arena floor level
+        // Simple ground collision (arena floor at y=515)
+        const groundY = 515; // Boss arena floor level
         if (this.y + this.height / 2 > groundY) {
             this.y = groundY - this.height / 2;
             this.vy = 0;
@@ -539,7 +539,7 @@ class Game {
 
         // Spawn boss when player reaches depth 500
         if (!this.boss && this.player.y > 505) {
-            this.boss = new Boss(30, 505); // Spawn in middle of arena
+            this.boss = new Boss(30, 510); // Spawn in middle of arena (x=30, y=510)
         }
 
         // Update boss
@@ -1840,22 +1840,27 @@ class World {
             }
         }
 
-        // BOSS ARENA at depth 500 (y = 505-508)
+        // BOSS ARENA at depth 500 (y = 505-515) - LARGE VISIBLE CHAMBER
         const bossDepth = 500;
         const bossY = SURFACE_LEVEL + bossDepth;
 
-        if (y >= bossY && y <= bossY + 3 && x >= 20 && x <= 40) {
-            // Arena floor (2 blocks thick)
-            if (y === bossY + 2 || y === bossY + 3) {
+        // Create large boss arena chamber (30 blocks wide, 10 blocks tall)
+        if (y >= bossY && y <= bossY + 10 && x >= 15 && x <= 45) {
+            // Arena floor (UNBREAKABLE - can't be destroyed)
+            if (y === bossY + 10) {
+                return { type: BLOCK_TYPES.UNBREAKABLE, mineral: null };
+            }
+            // Arena ceiling (BOMB_ROCK for visual distinction)
+            if (y === bossY) {
                 return { type: BLOCK_TYPES.BOMB_ROCK, mineral: null };
             }
-            // Arena air space
+            // Arena air space (big open room for boss fight)
             return { type: BLOCK_TYPES.AIR, mineral: null };
         }
 
-        // Boss arena walls (UNBREAKABLE blocks at edges)
+        // Boss arena walls (UNBREAKABLE blocks at edges - full height)
         if (y >= bossY && y <= bossY + 10) {
-            if (x === 19 || x === 41) {
+            if (x === 14 || x === 46) {
                 return { type: BLOCK_TYPES.UNBREAKABLE, mineral: null };
             }
         }
