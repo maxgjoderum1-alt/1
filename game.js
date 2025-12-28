@@ -1198,10 +1198,8 @@ class Game {
 
         // Weapon purchase options
         const ak47Cost = 5000;
-        const m4Cost = 7500;
         const ammoReloadCost = 100; // Cost per full reload
         const canBuyAK = !this.player.weapon && this.player.money >= ak47Cost;
-        const canBuyM4 = !this.player.weapon && this.player.money >= m4Cost;
         const canReloadAmmo = this.player.weapon && this.player.ammo < this.player.maxAmmo && this.player.money >= ammoReloadCost;
 
         let armsButtonHTML = '';
@@ -1227,12 +1225,9 @@ class Game {
                 <button class="shop-btn" id="buy-ak47-btn" ${!canBuyAK ? 'disabled' : ''}>
                     AK-47 - $${ak47Cost}
                 </button>
-                <button class="shop-btn" id="buy-m4-btn" ${!canBuyM4 ? 'disabled' : ''}>
-                    M4A1 - $${m4Cost}
-                </button>
             ` : `
                 <button class="shop-btn" disabled>
-                    ${this.player.weapon === 'ak47' ? 'AK-47' : 'M4A1'} - OWNED
+                    AK-47 - OWNED
                 </button>
                 <button class="shop-btn" id="reload-ammo-btn" ${!canReloadAmmo ? 'disabled' : ''}>
                     RELOAD AMMO - $${ammoReloadCost}
@@ -1242,7 +1237,7 @@ class Game {
                 Hull: ${Math.floor(this.player.hull)}/${this.player.maxHull}<br>
                 Bombs: ${this.player.bombs}/${this.player.maxBombs}<br>
                 Robot Arms: Level ${armsLevel}/${armsMaxLevel} (${armsLevel} slots)<br>
-                Weapon: ${this.player.weapon ? (this.player.weapon === 'ak47' ? 'AK-47' : 'M4A1') : 'None'}<br>
+                Weapon: ${this.player.weapon ? 'AK-47' : 'None'}<br>
                 Ammo: ${this.player.ammo}/${this.player.maxAmmo}
             </div>
         `;
@@ -1251,14 +1246,12 @@ class Game {
         const bombsBtn = document.getElementById('restock-bombs-btn');
         const armsBtn = document.getElementById('upgrade-arms-btn');
         const ak47Btn = document.getElementById('buy-ak47-btn');
-        const m4Btn = document.getElementById('buy-m4-btn');
         const reloadBtn = document.getElementById('reload-ammo-btn');
 
         if (repairBtn) repairBtn.addEventListener('click', () => this.repairHull());
         if (bombsBtn) bombsBtn.addEventListener('click', () => this.restockBombs());
         if (armsBtn) armsBtn.addEventListener('click', () => this.upgradeRobotArms());
         if (ak47Btn) ak47Btn.addEventListener('click', () => this.buyWeapon('ak47', ak47Cost));
-        if (m4Btn) m4Btn.addEventListener('click', () => this.buyWeapon('m4', m4Cost));
         if (reloadBtn) reloadBtn.addEventListener('click', () => this.reloadAmmo(ammoReloadCost));
     }
 
@@ -1438,9 +1431,9 @@ class Player {
         this.cooling = 0.5;
         this.bombs = 0; // Start with no bombs - must restock with gold first
         this.maxBombs = 3;
-        this.weapon = null; // Current weapon equipped (null, 'ak47', or 'm4')
+        this.weapon = null; // Current weapon equipped (null or 'ak47')
         this.ammo = 0; // Weapon ammo
-        this.maxAmmo = 120; // Max ammo capacity
+        this.maxAmmo = 120; // Max ammo capacity (30 rounds × 4 mags)
         this.lastDrillTime = 0;
         this.drillCooldown = 300; // 300ms between drills
         this.lastDirection = 1; // Track last horizontal direction (1 = right, -1 = left)
@@ -1944,6 +1937,33 @@ class Player {
         ctx.lineTo(screenX + shakeX, screenY + 18 + shakeY); // Bottom point
         ctx.closePath();
         ctx.fill();
+
+        // Draw AK-47 if equipped
+        if (this.weapon === 'ak47') {
+            const direction = this.lastDirection; // -1 for left, 1 for right
+            const gunX = screenX + (direction * 8); // Position gun to the side
+            const gunY = screenY + 2; // Middle of vehicle
+
+            // Gun body (receiver)
+            ctx.fillStyle = '#333';
+            ctx.fillRect(gunX + (direction * -2), gunY - 2, direction * 12, 4);
+
+            // Barrel
+            ctx.fillStyle = '#222';
+            ctx.fillRect(gunX + (direction * 10), gunY - 1, direction * 8, 2);
+
+            // Magazine
+            ctx.fillStyle = '#444';
+            ctx.fillRect(gunX + (direction * 2), gunY + 2, direction * 4, 6);
+
+            // Stock
+            ctx.fillStyle = '#654321'; // Brown wood color
+            ctx.fillRect(gunX + (direction * -4), gunY - 1, direction * 4, 3);
+
+            // Grip
+            ctx.fillStyle = '#654321';
+            ctx.fillRect(gunX + (direction * 3), gunY + 3, direction * 2, 4);
+        }
 
         // Draw windows
         ctx.fillStyle = '#00aaff';
