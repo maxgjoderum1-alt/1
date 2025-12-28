@@ -1305,9 +1305,10 @@ class Game {
         const canRestockBombs = needsBombRestock && hasGoldInCargo && armsLevel >= 1;
 
         // Weapon purchase options - REQUIRES ROBOT ARMS LV2 (for slot 2 visibility)
-        const ak47Cost = 5000;
+        const ak47DiamondCost = 5; // AK-47 costs 5 diamonds from cargo
         const ammoReloadCost = 100; // Cost per full reload
-        const canBuyAK = !this.player.weapon && this.player.money >= ak47Cost && armsLevel >= 2;
+        const diamondsInCargo = this.player.cargo.filter(mineral => mineral.name === 'Diamond').length;
+        const canBuyAK = !this.player.weapon && diamondsInCargo >= ak47DiamondCost && armsLevel >= 2;
         const canReloadAmmo = this.player.weapon && this.player.ammo < this.player.maxAmmo && this.player.money >= ammoReloadCost && armsLevel >= 2;
 
         let armsButtonHTML = '';
@@ -1331,7 +1332,7 @@ class Game {
             </button>
             ${!this.player.weapon ? `
                 <button class="shop-btn" id="buy-ak47-btn" ${!canBuyAK ? 'disabled' : ''}>
-                    AK-47 - $${ak47Cost}${armsLevel < 2 ? ' (Requires Robot Arms Lv2)' : ''}
+                    AK-47 - ${ak47DiamondCost} Diamonds${armsLevel < 2 ? ' (Requires Robot Arms Lv2)' : ''}
                 </button>
             ` : `
                 <button class="shop-btn" disabled>
@@ -1359,7 +1360,7 @@ class Game {
         if (repairBtn) repairBtn.addEventListener('click', () => this.repairHull());
         if (bombsBtn) bombsBtn.addEventListener('click', () => this.restockBombs());
         if (armsBtn) armsBtn.addEventListener('click', () => this.upgradeRobotArms());
-        if (ak47Btn) ak47Btn.addEventListener('click', () => this.buyWeapon('ak47', ak47Cost));
+        if (ak47Btn) ak47Btn.addEventListener('click', () => this.buyWeapon('ak47', ak47DiamondCost));
         if (reloadBtn) reloadBtn.addEventListener('click', () => this.reloadAmmo(ammoReloadCost));
     }
 
@@ -1394,13 +1395,26 @@ class Game {
         }
     }
 
-    buyWeapon(weaponType, cost) {
-        if (!this.player.weapon && this.player.money >= cost) {
-            this.player.money -= cost;
-            this.player.weapon = weaponType;
-            this.player.ammo = this.player.maxAmmo; // Start with full ammo
-            this.audio.playCollect();
-            this.updateShopUI();
+    buyWeapon(weaponType, diamondCost) {
+        if (!this.player.weapon) {
+            // Count diamonds in cargo
+            const diamondsInCargo = this.player.cargo.filter(mineral => mineral.name === 'Diamond');
+
+            if (diamondsInCargo.length >= diamondCost) {
+                // Remove the required number of diamonds from cargo
+                for (let i = 0; i < diamondCost; i++) {
+                    const diamondIndex = this.player.cargo.findIndex(mineral => mineral.name === 'Diamond');
+                    if (diamondIndex !== -1) {
+                        const diamond = this.player.cargo.splice(diamondIndex, 1)[0];
+                        this.player.cargoWeight -= diamond.weight;
+                    }
+                }
+
+                this.player.weapon = weaponType;
+                this.player.ammo = this.player.maxAmmo; // Start with full ammo
+                this.audio.playCollect();
+                this.updateShopUI();
+            }
         }
     }
 
