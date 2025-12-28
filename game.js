@@ -412,6 +412,7 @@ class Game {
         this.victory = false;
         this.particles = [];
         this.bombs = []; // Active thrown bombs
+        this.bullets = []; // Active bullets from AK-47
         this.boss = null; // First boss instance (500m depth)
         this.bossFloorRemoved = false; // Track if boss arena floor has been removed
         this.boss2 = null; // Second boss instance (2000m depth)
@@ -485,6 +486,7 @@ class Game {
         this.inShop = false; // Ensure not in shop
         this.particles = []; // Clear particles
         this.bombs = []; // Clear bombs
+        this.bullets = []; // Clear bullets
 
         document.getElementById('start-menu').style.display = 'none';
         document.getElementById('game-screen').style.display = 'block';
@@ -557,6 +559,48 @@ class Game {
                 // Explode the bomb
                 this.explodeBomb(bomb);
                 this.bombs.splice(i, 1);
+            }
+        }
+
+        // Update bullets
+        for (let i = this.bullets.length - 1; i >= 0; i--) {
+            const bullet = this.bullets[i];
+
+            // Move bullet
+            bullet.x += bullet.vx;
+            bullet.y += bullet.vy;
+            bullet.life--;
+
+            // Check collision with bosses
+            let hitBoss = false;
+            if (this.boss && this.boss.alive) {
+                const distX = Math.abs(bullet.x - this.boss.x);
+                const distY = Math.abs(bullet.y - this.boss.y);
+                if (distX < this.boss.width / 2 && distY < this.boss.height / 2) {
+                    this.boss.health -= bullet.damage;
+                    hitBoss = true;
+                    this.spawnParticles(bullet.x, bullet.y, '#ff0000', 5);
+                }
+            }
+            if (this.boss2 && this.boss2.alive) {
+                const distX = Math.abs(bullet.x - this.boss2.x);
+                const distY = Math.abs(bullet.y - this.boss2.y);
+                if (distX < this.boss2.width / 2 && distY < this.boss2.height / 2) {
+                    this.boss2.health -= bullet.damage;
+                    hitBoss = true;
+                    this.spawnParticles(bullet.x, bullet.y, '#ff0000', 5);
+                }
+            }
+
+            // Check collision with blocks
+            const bx = Math.floor(bullet.x);
+            const by = Math.floor(bullet.y);
+            const block = this.world.getBlock(bx, by);
+            const hitBlock = block && block.type !== BLOCK_TYPES.AIR;
+
+            // Remove bullet if it hit something or ran out of life
+            if (hitBoss || hitBlock || bullet.life <= 0) {
+                this.bullets.splice(i, 1);
             }
         }
 
@@ -820,6 +864,20 @@ class Game {
             bomb.render(this.ctx, this.camera);
         });
 
+        // Render bullets
+        this.bullets.forEach(bullet => {
+            const screenX = bullet.x * BLOCK_SIZE - this.camera.x;
+            const screenY = bullet.y * BLOCK_SIZE - this.camera.y;
+
+            // Draw bullet as a small orange/yellow projectile
+            this.ctx.fillStyle = '#ffaa00';
+            this.ctx.fillRect(screenX - 2, screenY - 1, 4, 2);
+
+            // Add slight glow effect
+            this.ctx.fillStyle = 'rgba(255, 255, 0, 0.5)';
+            this.ctx.fillRect(screenX - 3, screenY - 2, 6, 4);
+        });
+
         // Render player
         this.player.render(this.ctx, this.camera);
 
@@ -950,6 +1008,32 @@ class Game {
                     this.ctx.font = 'bold 10px monospace';
                     this.ctx.textAlign = 'right';
                     this.ctx.fillText(this.player.bombs, slotX + 27, hotbarY + 27);
+                }
+
+                // Draw AK-47 icon in slot 2 if player has weapon
+                if (slot === 2 && this.player.weapon === 'ak47') {
+                    // Draw simplified AK-47 icon
+                    // Barrel
+                    this.ctx.fillStyle = '#222';
+                    this.ctx.fillRect(slotX + 10, hotbarY + 14, 12, 2);
+
+                    // Receiver
+                    this.ctx.fillStyle = '#333';
+                    this.ctx.fillRect(slotX + 8, hotbarY + 12, 8, 4);
+
+                    // Stock
+                    this.ctx.fillStyle = '#654321';
+                    this.ctx.fillRect(slotX + 6, hotbarY + 13, 4, 2);
+
+                    // Magazine
+                    this.ctx.fillStyle = '#444';
+                    this.ctx.fillRect(slotX + 11, hotbarY + 16, 3, 5);
+
+                    // Draw ammo count
+                    this.ctx.fillStyle = '#fff';
+                    this.ctx.font = 'bold 10px monospace';
+                    this.ctx.textAlign = 'right';
+                    this.ctx.fillText(this.player.ammo, slotX + 27, hotbarY + 27);
                 }
             }
         }
@@ -1191,16 +1275,16 @@ class Game {
         const armsCost = armsBaseCost * Math.pow(2, armsLevel);
         const canUpgradeArms = armsLevel < armsMaxLevel && this.player.money >= armsCost;
 
-        // Bomb restock cost (1 gold mineral from inventory)
+        // Bomb restock cost (1 gold mineral from inventory) - REQUIRES ROBOT ARMS LV1
         const needsBombRestock = this.player.bombs < this.player.maxBombs;
         const hasGoldInCargo = this.player.cargo.some(mineral => mineral.name === 'Gold');
-        const canRestockBombs = needsBombRestock && hasGoldInCargo;
+        const canRestockBombs = needsBombRestock && hasGoldInCargo && armsLevel >= 1;
 
-        // Weapon purchase options
+        // Weapon purchase options - REQUIRES ROBOT ARMS LV1
         const ak47Cost = 5000;
         const ammoReloadCost = 100; // Cost per full reload
-        const canBuyAK = !this.player.weapon && this.player.money >= ak47Cost;
-        const canReloadAmmo = this.player.weapon && this.player.ammo < this.player.maxAmmo && this.player.money >= ammoReloadCost;
+        const canBuyAK = !this.player.weapon && this.player.money >= ak47Cost && armsLevel >= 1;
+        const canReloadAmmo = this.player.weapon && this.player.ammo < this.player.maxAmmo && this.player.money >= ammoReloadCost && armsLevel >= 1;
 
         let armsButtonHTML = '';
         if (armsLevel >= armsMaxLevel) {
@@ -1217,13 +1301,13 @@ class Game {
                 REPAIR HULL - $${repairCost}
             </button>
             <button class="shop-btn" id="restock-bombs-btn" ${!canRestockBombs ? 'disabled' : ''}>
-                RESTOCK BOMBS - 1 Gold
+                RESTOCK BOMBS - 1 Gold${armsLevel < 1 ? ' (Requires Robot Arms Lv1)' : ''}
             </button>
             ${armsButtonHTML}
-            <h4 style="margin-top: 15px; color: #ff9900;">WEAPONS</h4>
+            <h4 style="margin-top: 15px; color: #ff9900;">WEAPONS ${armsLevel < 1 ? '(Requires Robot Arms Lv1)' : ''}</h4>
             ${!this.player.weapon ? `
                 <button class="shop-btn" id="buy-ak47-btn" ${!canBuyAK ? 'disabled' : ''}>
-                    AK-47 - $${ak47Cost}
+                    AK-47 - $${ak47Cost}${armsLevel < 1 ? ' (Requires Robot Arms Lv1)' : ''}
                 </button>
             ` : `
                 <button class="shop-btn" disabled>
@@ -1501,10 +1585,12 @@ class Player {
             keys['5'] = false;
         }
 
-        // Throw bomb with spacebar (requires arms upgrade and slot 1 selected)
+        // Use selected item with spacebar (requires arms upgrade)
         if (keys[' ']) {
             if (this.selectedSlot === 1) {
-                this.throwBomb(game);
+                this.throwBomb(game); // Slot 1: Throw bomb
+            } else if (this.selectedSlot === 2 && this.weapon === 'ak47') {
+                this.shootWeapon(game); // Slot 2: Shoot AK-47
             }
             keys[' '] = false;
         }
@@ -1836,6 +1922,43 @@ class Player {
             const bomb = new Bomb(this.x, this.y, throwVx, throwVy);
             game.bombs.push(bomb);
         }
+    }
+
+    shootWeapon(game) {
+        // Can only shoot if you have the weapon and ammo
+        if (!this.weapon || this.ammo <= 0) {
+            return;
+        }
+
+        this.ammo--;
+
+        // Create bullet in the direction player is facing
+        const bulletSpeed = 1.5; // Fast bullet speed
+        const bulletVx = bulletSpeed * this.lastDirection;
+        const bulletVy = 0; // Shoot straight horizontally
+
+        // Spawn bullet from gun position (slightly offset from player center)
+        const bulletX = this.x + (this.lastDirection * 0.8);
+        const bulletY = this.y;
+
+        // Create bullet object
+        const bullet = {
+            x: bulletX,
+            y: bulletY,
+            vx: bulletVx,
+            vy: bulletVy,
+            life: 120, // 2 seconds at 60fps
+            damage: 10 // Damage to bosses
+        };
+
+        // Add bullet to game (we'll need to add bullets array to game)
+        if (!game.bullets) {
+            game.bullets = [];
+        }
+        game.bullets.push(bullet);
+
+        // Play shoot sound (if available)
+        // game.audio.playShoot();
     }
 
     dropMinerals() {
