@@ -76,8 +76,8 @@ class Boss {
         // Apply vertical movement
         this.y += this.vy;
 
-        // Simple ground collision (arena floor at y=515)
-        const groundY = 515; // Boss arena floor level
+        // Simple ground collision (arena floor at y=115)
+        const groundY = 115; // Boss arena floor level
         if (this.y + this.height / 2 > groundY) {
             this.y = groundY - this.height / 2;
             this.vy = 0;
@@ -537,9 +537,9 @@ class Game {
             }
         }
 
-        // Spawn boss when player reaches depth 500
-        if (!this.boss && this.player.y > 505) {
-            this.boss = new Boss(30, 510); // Spawn in middle of arena (x=30, y=510)
+        // Spawn boss when player reaches depth 500m (y > 105)
+        if (!this.boss && this.player.y > 105) {
+            this.boss = new Boss(30, 110); // Spawn in middle of arena (x=30, y=110)
         }
 
         // Update boss
@@ -1840,9 +1840,11 @@ class World {
             }
         }
 
-        // BOSS ARENA at depth 500 (y = 505-515) - LARGE VISIBLE CHAMBER
-        const bossDepth = 500;
-        const bossY = SURFACE_LEVEL + bossDepth;
+        // BOSS ARENA at depth 500m (y = 105-115) - LARGE VISIBLE CHAMBER
+        // Depth calculation: (y - SURFACE_LEVEL) * 5 = depth in meters
+        // So for 500m: (y - 5) * 5 = 500 → y = 105
+        const bossDepth = 100; // y offset from surface
+        const bossY = SURFACE_LEVEL + bossDepth; // y = 105
 
         // Create large boss arena chamber (30 blocks wide, 10 blocks tall)
         if (y >= bossY && y <= bossY + 10 && x >= 15 && x <= 45) {
