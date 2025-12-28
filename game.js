@@ -599,7 +599,8 @@ class Game {
             const hitBlock = block && block.type !== BLOCK_TYPES.AIR;
 
             // Check if bullet is outside world boundaries
-            const outsideBounds = bullet.x < 0 || bullet.x > WORLD_WIDTH || bullet.y < SURFACE_LEVEL || bullet.y > WORLD_HEIGHT;
+            // Allow bullets in sky (above surface), only remove if way off screen or below world
+            const outsideBounds = bullet.x < -5 || bullet.x > WORLD_WIDTH + 5 || bullet.y > WORLD_HEIGHT;
 
             // Remove bullet if it hit something, ran out of life, or went outside bounds
             if (hitBoss || hitBlock || bullet.life <= 0 || outsideBounds) {
