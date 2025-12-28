@@ -1300,11 +1300,11 @@ class Game {
             <button class="shop-btn" id="repair-hull-dynamic-btn" ${!canRepair ? 'disabled' : ''}>
                 REPAIR HULL - $${repairCost}
             </button>
-            <button class="shop-btn" id="restock-bombs-btn" ${!canRestockBombs ? 'disabled' : ''}>
-                RESTOCK BOMBS - 1 Gold${armsLevel < 1 ? ' (Requires Robot Arms Lv1)' : ''}
-            </button>
             ${armsButtonHTML}
-            <h4 style="margin-top: 15px; color: #ff9900;">WEAPONS ${armsLevel < 2 ? '(Requires Robot Arms Lv2)' : ''}</h4>
+            <h4 style="margin-top: 15px; color: #ff9900;">WEAPONS ${armsLevel < 1 ? '(Requires Robot Arms Lv1+)' : ''}</h4>
+            <button class="shop-btn" id="restock-bombs-btn" ${!canRestockBombs ? 'disabled' : ''}>
+                BOMBS - 1 Gold${armsLevel < 1 ? ' (Requires Robot Arms Lv1)' : ''}
+            </button>
             ${!this.player.weapon ? `
                 <button class="shop-btn" id="buy-ak47-btn" ${!canBuyAK ? 'disabled' : ''}>
                     AK-47 - $${ak47Cost}${armsLevel < 2 ? ' (Requires Robot Arms Lv2)' : ''}
@@ -1948,7 +1948,7 @@ class Player {
             vx: bulletVx,
             vy: bulletVy,
             life: 120, // 2 seconds at 60fps
-            damage: 10 // Damage to bosses
+            damage: 30 // Damage to bosses
         };
 
         // Add bullet to game (we'll need to add bullets array to game)
@@ -2061,8 +2061,8 @@ class Player {
         ctx.closePath();
         ctx.fill();
 
-        // Draw AK-47 if equipped
-        if (this.weapon === 'ak47') {
+        // Draw AK-47 if equipped AND slot 2 is selected
+        if (this.weapon === 'ak47' && this.selectedSlot === 2) {
             const direction = this.lastDirection; // -1 for left, 1 for right
             const gunX = screenX + (direction * 8); // Position gun to the side
             const gunY = screenY + 2; // Middle of vehicle
