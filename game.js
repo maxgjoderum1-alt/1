@@ -477,6 +477,14 @@ class Game {
         // Player visual size is 1.0 blocks (20px), so visual bottom at player.y + 0.5
         // At y=4.5, visual bottom = 5.0 (exactly on block top)
         this.player = new Player(WORLD_WIDTH / 2 + 0.5, SURFACE_LEVEL - 0.5); // Centered on block, standing on top
+
+        // Debug: Check what blocks exist on surface
+        console.log(`[DEBUG] Checking surface blocks at y=${SURFACE_LEVEL}:`);
+        for (let x = 25; x <= 35; x++) {
+            const block = this.world.getBlock(x, SURFACE_LEVEL);
+            console.log(`  Block at (${x}, ${SURFACE_LEVEL}): type=${block ? block.type : 'null'}`);
+        }
+
         this.currentShop = null;
         this.gameOver = false;
         this.victory = false;
@@ -1481,6 +1489,7 @@ class Player {
             // Moving upward - update highest point
             if (this.highestPoint === 0 || this.y < this.highestPoint) {
                 this.highestPoint = this.y;
+                console.log(`[UP] New highest point: ${this.highestPoint.toFixed(2)}, vy: ${this.vy.toFixed(3)}`);
             }
         }
 
@@ -1489,6 +1498,7 @@ class Player {
             this.isFalling = true;
             // Use highest point if we have one, otherwise use current position
             this.fallStartY = this.highestPoint !== 0 ? this.highestPoint : this.y;
+            console.log(`[FALL START] isFalling=true, fallStartY: ${this.fallStartY.toFixed(2)}, highestPoint: ${this.highestPoint.toFixed(2)}, current y: ${this.y.toFixed(2)}, vy: ${this.vy.toFixed(3)}`);
         }
 
         // If player thrusts upward during fall, restart fall measurement from current position
