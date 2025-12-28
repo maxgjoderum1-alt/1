@@ -478,13 +478,6 @@ class Game {
         // At y=4.5, visual bottom = 5.0 (exactly on block top)
         this.player = new Player(WORLD_WIDTH / 2 + 0.5, SURFACE_LEVEL - 0.5); // Centered on block, standing on top
 
-        // Debug: Check what blocks exist on surface
-        console.log(`[DEBUG] Checking surface blocks at y=${SURFACE_LEVEL}:`);
-        for (let x = 25; x <= 35; x++) {
-            const block = this.world.getBlock(x, SURFACE_LEVEL);
-            console.log(`  Block at (${x}, ${SURFACE_LEVEL}): type=${block ? block.type : 'null'}`);
-        }
-
         this.currentShop = null;
         this.gameOver = false;
         this.victory = false;
@@ -1400,11 +1393,6 @@ class Player {
         this.selectedSlot = 0; // Hotbar slot selection (0 = none, 1-5 = slot number based on arms level)
         this.lastDamageTime = 0; // Track last time player took damage (for damage cooldown)
 
-        // Fall damage tracking
-        this.isFalling = false; // Track if currently in a fall
-        this.fallStartY = 0; // Y position where fall started (highest point reached)
-        this.highestPoint = 0; // Track the highest point (lowest y value) when jumping
-
         this.availableUpgrades = [
             { id: 'drill', name: 'Drill Power', description: 'Mine harder blocks (required for deep mining)', baseCost: 500, maxLevel: 5 },
             { id: 'cargo', name: 'Cargo Bay', description: 'Carry more minerals', baseCost: 50, maxLevel: 5 },
@@ -1479,32 +1467,6 @@ class Player {
             this.dropMinerals();
             keys['b'] = false;
             keys['B'] = false;
-        }
-
-        // Fall damage tracking - track highest point reached and falling without thrust
-        const isThrustingUp = keys['ArrowUp'] || keys['w'] || keys['W'];
-
-        // Track highest point (lowest y value) when moving upward
-        if (this.vy < 0) {
-            // Moving upward - update highest point
-            if (this.highestPoint === 0 || this.y < this.highestPoint) {
-                this.highestPoint = this.y;
-                console.log(`[UP] New highest point: ${this.highestPoint.toFixed(2)}, vy: ${this.vy.toFixed(3)}`);
-            }
-        }
-
-        // Start tracking fall when falling without thrusting up
-        if (this.vy > 0.05 && !isThrustingUp && !this.isFalling) {
-            this.isFalling = true;
-            // Use highest point if we have one, otherwise use current position
-            this.fallStartY = this.highestPoint !== 0 ? this.highestPoint : this.y;
-            console.log(`[FALL START] isFalling=true, fallStartY: ${this.fallStartY.toFixed(2)}, highestPoint: ${this.highestPoint.toFixed(2)}, current y: ${this.y.toFixed(2)}, vy: ${this.vy.toFixed(3)}`);
-        }
-
-        // If player thrusts upward during fall, restart fall measurement from current position
-        if (isThrustingUp && this.isFalling) {
-            this.fallStartY = this.y; // Reset fall start to current position
-            this.highestPoint = this.y; // Reset highest point too
         }
 
         // Apply drag (more drag for slower, more controllable movement)
@@ -1746,31 +1708,6 @@ class Player {
                                 // Only stop downward velocity when landing on top of block
                                 // When landing on top: player y < block center y (player is above block)
                                 if (this.vy > 0 && this.y < blockCenterY) {
-                                    console.log(`[COLLISION] Landing detected! BlockPos: (${bx}, ${by}), BlockType: ${block.type}, PlayerY: ${this.y.toFixed(2)}, vy: ${this.vy.toFixed(3)}, isFalling: ${this.isFalling}, fallStartY: ${this.fallStartY.toFixed(2)}, highestPoint: ${this.highestPoint.toFixed(2)}`);
-                                    // Fall damage based on distance fallen without thrust
-                                    if (this.isFalling && this.fallStartY !== 0) {
-                                        const fallDistance = this.y - this.fallStartY; // In blocks
-                                        const fallMeters = fallDistance * 5; // Convert to meters (each block = 5m)
-
-                                        console.log(`Landing! Y: ${this.y.toFixed(2)}, BlockY: ${by}, Fall meters: ${fallMeters.toFixed(1)}, isFalling: ${this.isFalling}`);
-
-                                        // Apply damage if fell more than 50 meters (10 blocks)
-                                        if (fallMeters > 50) {
-                                            const fallDamage = (fallMeters - 50) * 1.0; // 1.0 damage per meter after 50m
-                                            console.log(`Fall damage applied: ${fallDamage.toFixed(1)} HP`);
-                                            this.hull -= fallDamage;
-
-                                            // Visual feedback
-                                            if (game) {
-                                                game.spawnParticles(this.x, this.y, '#ff4400', Math.min(40, Math.floor(fallMeters / 3)));
-                                            }
-                                        }
-
-                                        // Reset fall tracking
-                                        this.isFalling = false;
-                                        this.fallStartY = 0;
-                                        this.highestPoint = 0;
-                                    }
                                     this.vy = 0;
                                 } else if (this.vy < 0 && this.y > blockCenterY) {
                                     // Hitting ceiling from below: player y > block center y (player is below block)
