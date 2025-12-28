@@ -1394,7 +1394,8 @@ class Player {
 
         // Fall damage tracking
         this.isFalling = false; // Track if currently in a fall
-        this.fallStartY = 0; // Y position where fall started
+        this.fallStartY = 0; // Y position where fall started (highest point reached)
+        this.highestPoint = 0; // Track the highest point (lowest y value) when jumping
 
         this.availableUpgrades = [
             { id: 'drill', name: 'Drill Power', description: 'Mine harder blocks (required for deep mining)', baseCost: 500, maxLevel: 5 },
@@ -1472,24 +1473,28 @@ class Player {
             keys['B'] = false;
         }
 
-        // Fall damage tracking - track falling without thrust
+        // Fall damage tracking - track highest point reached and falling without thrust
         const isThrustingUp = keys['ArrowUp'] || keys['w'] || keys['W'];
 
-        // Start tracking fall when falling without thrusting up (lowered threshold for smoother tracking)
+        // Track highest point (lowest y value) when moving upward
+        if (this.vy < 0) {
+            // Moving upward - update highest point
+            if (this.highestPoint === 0 || this.y < this.highestPoint) {
+                this.highestPoint = this.y;
+            }
+        }
+
+        // Start tracking fall when falling without thrusting up
         if (this.vy > 0.05 && !isThrustingUp && !this.isFalling) {
             this.isFalling = true;
-            this.fallStartY = this.y;
+            // Use highest point if we have one, otherwise use current position
+            this.fallStartY = this.highestPoint !== 0 ? this.highestPoint : this.y;
         }
 
         // If player thrusts upward during fall, restart fall measurement from current position
         if (isThrustingUp && this.isFalling) {
             this.fallStartY = this.y; // Reset fall start to current position
-        }
-
-        // Stop tracking if player is moving upward or stationary
-        if (this.vy <= 0 && this.isFalling) {
-            this.isFalling = false;
-            this.fallStartY = 0;
+            this.highestPoint = this.y; // Reset highest point too
         }
 
         // Apply drag (more drag for slower, more controllable movement)
@@ -1731,7 +1736,7 @@ class Player {
                                 // Only stop downward velocity when landing on top of block
                                 // When landing on top: player y < block center y (player is above block)
                                 if (this.vy > 0 && this.y < blockCenterY) {
-                                    console.log(`[COLLISION] Landing detected! BlockPos: (${bx}, ${by}), BlockType: ${block.type}, PlayerY: ${this.y.toFixed(2)}, vy: ${this.vy.toFixed(3)}, isFalling: ${this.isFalling}, fallStartY: ${this.fallStartY.toFixed(2)}`);
+                                    console.log(`[COLLISION] Landing detected! BlockPos: (${bx}, ${by}), BlockType: ${block.type}, PlayerY: ${this.y.toFixed(2)}, vy: ${this.vy.toFixed(3)}, isFalling: ${this.isFalling}, fallStartY: ${this.fallStartY.toFixed(2)}, highestPoint: ${this.highestPoint.toFixed(2)}`);
                                     // Fall damage based on distance fallen without thrust
                                     if (this.isFalling && this.fallStartY > 0) {
                                         const fallDistance = this.y - this.fallStartY; // In blocks
@@ -1754,6 +1759,7 @@ class Player {
                                         // Reset fall tracking
                                         this.isFalling = false;
                                         this.fallStartY = 0;
+                                        this.highestPoint = 0;
                                     }
                                     this.vy = 0;
                                 } else if (this.vy < 0 && this.y > blockCenterY) {
