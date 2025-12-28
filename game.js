@@ -1819,7 +1819,17 @@ class Player {
         }
 
         // Draw drill as triangle (shakes when drilling)
-        ctx.fillStyle = '#888';
+        // Drill color changes based on upgrade level
+        const drillLevel = this.upgrades.drill || 0;
+        const drillColors = [
+            '#888',    // Level 0: Gray (basic)
+            '#a0a0ff', // Level 1: Light blue (iron)
+            '#00ff00', // Level 2: Green (emerald)
+            '#ffaa00', // Level 3: Gold
+            '#ff00ff', // Level 4: Magenta (ruby)
+            '#00ffff'  // Level 5: Cyan (diamond)
+        ];
+        ctx.fillStyle = drillColors[drillLevel];
 
         // Check if currently drilling (within cooldown period)
         const isDrilling = Date.now() - this.lastDrillTime < this.drillCooldown;
