@@ -1280,11 +1280,11 @@ class Game {
         const hasGoldInCargo = this.player.cargo.some(mineral => mineral.name === 'Gold');
         const canRestockBombs = needsBombRestock && hasGoldInCargo && armsLevel >= 1;
 
-        // Weapon purchase options - REQUIRES ROBOT ARMS LV1
+        // Weapon purchase options - REQUIRES ROBOT ARMS LV2 (for slot 2 visibility)
         const ak47Cost = 5000;
         const ammoReloadCost = 100; // Cost per full reload
-        const canBuyAK = !this.player.weapon && this.player.money >= ak47Cost && armsLevel >= 1;
-        const canReloadAmmo = this.player.weapon && this.player.ammo < this.player.maxAmmo && this.player.money >= ammoReloadCost && armsLevel >= 1;
+        const canBuyAK = !this.player.weapon && this.player.money >= ak47Cost && armsLevel >= 2;
+        const canReloadAmmo = this.player.weapon && this.player.ammo < this.player.maxAmmo && this.player.money >= ammoReloadCost && armsLevel >= 2;
 
         let armsButtonHTML = '';
         if (armsLevel >= armsMaxLevel) {
@@ -1304,17 +1304,17 @@ class Game {
                 RESTOCK BOMBS - 1 Gold${armsLevel < 1 ? ' (Requires Robot Arms Lv1)' : ''}
             </button>
             ${armsButtonHTML}
-            <h4 style="margin-top: 15px; color: #ff9900;">WEAPONS ${armsLevel < 1 ? '(Requires Robot Arms Lv1)' : ''}</h4>
+            <h4 style="margin-top: 15px; color: #ff9900;">WEAPONS ${armsLevel < 2 ? '(Requires Robot Arms Lv2)' : ''}</h4>
             ${!this.player.weapon ? `
                 <button class="shop-btn" id="buy-ak47-btn" ${!canBuyAK ? 'disabled' : ''}>
-                    AK-47 - $${ak47Cost}${armsLevel < 1 ? ' (Requires Robot Arms Lv1)' : ''}
+                    AK-47 - $${ak47Cost}${armsLevel < 2 ? ' (Requires Robot Arms Lv2)' : ''}
                 </button>
             ` : `
                 <button class="shop-btn" disabled>
                     AK-47 - OWNED
                 </button>
                 <button class="shop-btn" id="reload-ammo-btn" ${!canReloadAmmo ? 'disabled' : ''}>
-                    RELOAD AMMO - $${ammoReloadCost}
+                    RELOAD AMMO - $${ammoReloadCost}${armsLevel < 2 ? ' (Requires Robot Arms Lv2)' : ''}
                 </button>
             `}
             <div style="color: #888; margin-top: 10px;">
