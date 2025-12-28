@@ -68,8 +68,8 @@ class Boss {
         const rightEdge = Math.floor(this.x + this.width / 2);
         const bottomY = Math.floor(this.y + this.height / 2);
 
-        // Check if hit wall or edge (arena is x=15 to x=45)
-        if (leftEdge <= 15 || rightEdge >= 45) {
+        // Check if hit wall or edge (arena is full width: x=0 to x=60)
+        if (leftEdge <= 1 || rightEdge >= 59) {
             this.direction *= -1; // Turn around
         }
 
@@ -1840,14 +1840,14 @@ class World {
             }
         }
 
-        // BOSS ARENA at depth 500m (y = 105-115) - LARGE VISIBLE CHAMBER
+        // BOSS ARENA at depth 500m (y = 105-115) - FULL WIDTH CHAMBER
         // Depth calculation: (y - SURFACE_LEVEL) * 5 = depth in meters
         // So for 500m: (y - 5) * 5 = 500 → y = 105
         const bossDepth = 100; // y offset from surface
         const bossY = SURFACE_LEVEL + bossDepth; // y = 105
 
-        // Create large boss arena chamber (30 blocks wide, 10 blocks tall)
-        if (y >= bossY && y <= bossY + 10 && x >= 15 && x <= 45) {
+        // Create full-width boss arena chamber (entire playable area, 10 blocks tall)
+        if (y >= bossY && y <= bossY + 10 && x >= 0 && x < WORLD_WIDTH) {
             // Arena floor (UNBREAKABLE - can't be destroyed)
             if (y === bossY + 10) {
                 return { type: BLOCK_TYPES.UNBREAKABLE, mineral: null };
@@ -1858,13 +1858,6 @@ class World {
             }
             // Arena air space (big open room for boss fight)
             return { type: BLOCK_TYPES.AIR, mineral: null };
-        }
-
-        // Boss arena walls (UNBREAKABLE blocks at edges - full height)
-        if (y >= bossY && y <= bossY + 10) {
-            if (x === 14 || x === 46) {
-                return { type: BLOCK_TYPES.UNBREAKABLE, mineral: null };
-            }
         }
 
         // CAVE GENERATION - Random air pockets underground
