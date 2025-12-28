@@ -598,9 +598,8 @@ class Game {
             const block = this.world.getBlock(bx, by);
             const hitBlock = block && block.type !== BLOCK_TYPES.AIR;
 
-            // Check if bullet is outside world boundaries
-            // Allow bullets in sky (above surface), only remove if way off screen or below world
-            const outsideBounds = bullet.x < -5 || bullet.x > WORLD_WIDTH + 5 || bullet.y > WORLD_HEIGHT;
+            // Check if bullet is outside world boundaries - strict boundaries
+            const outsideBounds = bullet.x < 0 || bullet.x > WORLD_WIDTH || bullet.y < 0 || bullet.y > WORLD_HEIGHT;
 
             // Remove bullet if it hit something, ran out of life, or went outside bounds
             if (hitBoss || hitBlock || bullet.life <= 0 || outsideBounds) {
@@ -873,17 +872,17 @@ class Game {
             const screenX = bullet.x * BLOCK_SIZE - this.camera.x;
             const screenY = bullet.y * BLOCK_SIZE - this.camera.y;
 
-            // Draw bullet as a bright yellow/white projectile (very visible)
-            // Bright glow effect first
-            this.ctx.fillStyle = 'rgba(255, 255, 100, 0.7)';
-            this.ctx.fillRect(screenX - 4, screenY - 3, 8, 6);
+            // Draw bullet as a dark metal projectile
+            // Dark shadow/outline
+            this.ctx.fillStyle = 'rgba(40, 40, 40, 0.8)';
+            this.ctx.fillRect(screenX - 3, screenY - 2, 6, 4);
 
-            // Core bullet (bright white/yellow)
-            this.ctx.fillStyle = '#ffff00';
+            // Core bullet (dark gray/metal)
+            this.ctx.fillStyle = '#4a4a4a';
             this.ctx.fillRect(screenX - 2, screenY - 1, 4, 2);
 
-            // White center for extra visibility
-            this.ctx.fillStyle = '#ffffff';
+            // Lighter center for depth
+            this.ctx.fillStyle = '#666666';
             this.ctx.fillRect(screenX - 1, screenY, 2, 1);
         });
 
