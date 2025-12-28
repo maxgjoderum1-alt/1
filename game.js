@@ -92,7 +92,7 @@ class Boss {
         if (this.canJump && this.onGround && this.jumpCooldown <= 0) {
             // Jump randomly (20% chance each frame when on ground)
             if (Math.random() < 0.02) {
-                this.vy = -1.2; // Jump velocity
+                this.vy = -0.6; // Jump velocity (reduced to stay in arena)
                 this.jumpCooldown = 120; // 2 seconds cooldown (60 fps)
             }
         }
@@ -2094,23 +2094,22 @@ class World {
         }
 
         // Post-Boss (110-500) - Right after boss floor, diamonds start appearing at 1%
-        // 83.5% dirt, 13% bronze, 1% silver, 1% gold, 0.5% emerald, 1% diamond
+        // 84% dirt, 13% bronze, 1% silver, 1% gold, 1% diamond (no emerald before 2000m)
         if (depth < 500) {
-            if (rand < 0.835) return null; // 83.5% dirt
-            if (rand < 0.965) return MINERALS.BRONZE; // 13% bronze
-            if (rand < 0.975) return MINERALS.SILVER; // 1% silver
-            if (rand < 0.985) return MINERALS.GOLD; // 1% gold
-            if (rand < 0.99) return MINERALS.EMERALD; // 0.5% emerald
+            if (rand < 0.84) return null; // 84% dirt
+            if (rand < 0.97) return MINERALS.BRONZE; // 13% bronze
+            if (rand < 0.98) return MINERALS.SILVER; // 1% silver
+            if (rand < 0.99) return MINERALS.GOLD; // 1% gold
             return MINERALS.DIAMOND; // 1% diamond
         }
 
-        // Medium (500-2000) - 77% dirt, 10% bronze, 10% silver, 1% gold, 1% emerald, 1% diamond
+        // Medium (500-2000) - 78% dirt, 10% bronze, 10% silver, 1% gold, 1% diamond
+        // No emerald before 2000m depth (boss 2 location)
         if (depth < 2000) {
-            if (rand < 0.77) return null; // 77% dirt
-            if (rand < 0.87) return MINERALS.BRONZE; // 10% bronze
-            if (rand < 0.97) return MINERALS.SILVER; // 10% silver
-            if (rand < 0.98) return MINERALS.GOLD; // 1% gold
-            if (rand < 0.99) return MINERALS.EMERALD; // 1% emerald
+            if (rand < 0.78) return null; // 78% dirt
+            if (rand < 0.88) return MINERALS.BRONZE; // 10% bronze
+            if (rand < 0.98) return MINERALS.SILVER; // 10% silver
+            if (rand < 0.99) return MINERALS.GOLD; // 1% gold
             return MINERALS.DIAMOND; // 1% diamond
         }
 
