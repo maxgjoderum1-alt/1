@@ -1481,10 +1481,9 @@ class Player {
             this.fallStartY = this.y;
         }
 
-        // Reset fall tracking if player thrusts upward
+        // If player thrusts upward during fall, restart fall measurement from current position
         if (isThrustingUp && this.isFalling) {
-            this.isFalling = false;
-            this.fallStartY = 0;
+            this.fallStartY = this.y; // Reset fall start to current position
         }
 
         // Apply drag (more drag for slower, more controllable movement)
