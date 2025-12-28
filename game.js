@@ -1392,6 +1392,10 @@ class Player {
         this.selectedSlot = 0; // Hotbar slot selection (0 = none, 1-5 = slot number based on arms level)
         this.lastDamageTime = 0; // Track last time player took damage (for damage cooldown)
 
+        // Fall damage tracking
+        this.isFalling = false; // Track if currently in a fall
+        this.fallStartY = 0; // Y position where fall started
+
         this.availableUpgrades = [
             { id: 'drill', name: 'Drill Power', description: 'Mine harder blocks (required for deep mining)', baseCost: 500, maxLevel: 5 },
             { id: 'cargo', name: 'Cargo Bay', description: 'Carry more minerals', baseCost: 50, maxLevel: 5 },
@@ -1466,6 +1470,21 @@ class Player {
             this.dropMinerals();
             keys['b'] = false;
             keys['B'] = false;
+        }
+
+        // Fall damage tracking - track falling without thrust
+        const isThrustingUp = keys['ArrowUp'] || keys['w'] || keys['W'];
+
+        // Start tracking fall when falling without thrusting up
+        if (this.vy > 0.1 && !isThrustingUp && !this.isFalling) {
+            this.isFalling = true;
+            this.fallStartY = this.y;
+        }
+
+        // Reset fall tracking if player thrusts upward
+        if (isThrustingUp && this.isFalling) {
+            this.isFalling = false;
+            this.fallStartY = 0;
         }
 
         // Apply drag (more drag for slower, more controllable movement)
@@ -1707,6 +1726,26 @@ class Player {
                                 // Only stop downward velocity when landing on top of block
                                 // When landing on top: player y < block center y (player is above block)
                                 if (this.vy > 0 && this.y < blockCenterY) {
+                                    // Fall damage based on distance fallen without thrust
+                                    if (this.isFalling && this.fallStartY > 0) {
+                                        const fallDistance = this.y - this.fallStartY; // In blocks
+                                        const fallMeters = fallDistance * 5; // Convert to meters (each block = 5m)
+
+                                        // Apply damage if fell more than 10 meters (2 blocks)
+                                        if (fallMeters > 10) {
+                                            const fallDamage = (fallMeters - 10) * 0.5; // 0.5 damage per meter after 10m
+                                            this.hull -= fallDamage;
+
+                                            // Visual feedback
+                                            if (game) {
+                                                game.spawnParticles(this.x, this.y, '#ff4400', Math.min(30, Math.floor(fallMeters / 2)));
+                                            }
+                                        }
+
+                                        // Reset fall tracking
+                                        this.isFalling = false;
+                                        this.fallStartY = 0;
+                                    }
                                     this.vy = 0;
                                 } else if (this.vy < 0 && this.y > blockCenterY) {
                                     // Hitting ceiling from below: player y > block center y (player is below block)
