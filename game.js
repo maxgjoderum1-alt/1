@@ -1707,17 +1707,6 @@ class Player {
                                 // Only stop downward velocity when landing on top of block
                                 // When landing on top: player y < block center y (player is above block)
                                 if (this.vy > 0 && this.y < blockCenterY) {
-                                    // Fall damage - reduced to be more forgiving
-                                    if (!collided && this.vy > 0.28) {
-                                        const fallDamage = Math.pow(this.vy, 2) * 100;
-                                        this.hull -= fallDamage;
-                                        collided = true;
-
-                                        // Visual feedback for fall damage
-                                        if (game) {
-                                            game.spawnParticles(this.x, this.y, '#ff4400', Math.min(20, Math.floor(fallDamage)));
-                                        }
-                                    }
                                     this.vy = 0;
                                 } else if (this.vy < 0 && this.y > blockCenterY) {
                                     // Hitting ceiling from below: player y > block center y (player is below block)
