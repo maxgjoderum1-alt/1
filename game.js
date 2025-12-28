@@ -420,6 +420,7 @@ class Game {
         this.audio = new AudioSystem();
         this.lastWarningTime = 0;
         this.needsDrillUpgradeWarning = false; // Show warning when trying to drill gold without upgrade
+        this.needsBombWarning = false; // Show warning when trying to drill BOMB_ROCK
         this.hasLeftShopArea = true; // Track if player has moved away from shop
         this.shopWaitStartTime = 0; // Track when player became stationary at shop
         this.shopWaitDuration = 1000; // 1 second in milliseconds
@@ -1146,6 +1147,21 @@ class Game {
             }, 2000);
         }
 
+        // Bomb needed for BOMB_ROCK warning
+        if (this.needsBombWarning) {
+            const warning = document.createElement('div');
+            warning.className = 'warning-message';
+            warning.textContent = '⚠️ USE BOMBS TO DESTROY HARD ROCK ⚠️';
+            warning.style.background = 'rgba(64, 64, 64, 0.9)';
+            warning.style.borderColor = '#808080';
+            warningsContainer.appendChild(warning);
+            shouldPlayWarning = true;
+            // Reset flag after a short delay
+            setTimeout(() => {
+                this.needsBombWarning = false;
+            }, 3000);
+        }
+
         // Play warning sound occasionally
         if (shouldPlayWarning && now - this.lastWarningTime > 2000) {
             this.audio.playWarning();
@@ -1725,6 +1741,12 @@ class Player {
     tryDrillBlock(world, game, blockX, blockY, vxPush, vyPush) {
         if (blockY >= SURFACE_LEVEL && blockY < WORLD_HEIGHT && blockX >= 0 && blockX < WORLD_WIDTH) {
             const block = world.getBlock(blockX, blockY);
+
+            // Check if player is trying to drill BOMB_ROCK - show warning
+            if (block && block.type === BLOCK_TYPES.BOMB_ROCK) {
+                game.needsBombWarning = true;
+                return false; // Can't drill BOMB_ROCK - must use bombs
+            }
 
             if (block && block.type !== BLOCK_TYPES.AIR && block.type !== BLOCK_TYPES.UNBREAKABLE && block.type !== BLOCK_TYPES.BOMB_ROCK) {
                 const hardness = this.getBlockHardness(block.type);
