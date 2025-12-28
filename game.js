@@ -1731,14 +1731,18 @@ class Player {
                                 // Only stop downward velocity when landing on top of block
                                 // When landing on top: player y < block center y (player is above block)
                                 if (this.vy > 0 && this.y < blockCenterY) {
+                                    console.log(`[COLLISION] Landing detected! BlockPos: (${bx}, ${by}), BlockType: ${block.type}, PlayerY: ${this.y.toFixed(2)}, vy: ${this.vy.toFixed(3)}, isFalling: ${this.isFalling}, fallStartY: ${this.fallStartY.toFixed(2)}`);
                                     // Fall damage based on distance fallen without thrust
                                     if (this.isFalling && this.fallStartY > 0) {
                                         const fallDistance = this.y - this.fallStartY; // In blocks
                                         const fallMeters = fallDistance * 5; // Convert to meters (each block = 5m)
 
+                                        console.log(`Landing! Y: ${this.y.toFixed(2)}, BlockY: ${by}, Fall meters: ${fallMeters.toFixed(1)}, isFalling: ${this.isFalling}`);
+
                                         // Apply damage if fell more than 50 meters (10 blocks)
                                         if (fallMeters > 50) {
                                             const fallDamage = (fallMeters - 50) * 1.0; // 1.0 damage per meter after 50m
+                                            console.log(`Fall damage applied: ${fallDamage.toFixed(1)} HP`);
                                             this.hull -= fallDamage;
 
                                             // Visual feedback
@@ -2018,6 +2022,8 @@ class World {
             if (x === 49 || x === 50) {
                 return { type: BLOCK_TYPES.UNBREAKABLE, mineral: null };
             }
+            // All other surface blocks are solid (for fall damage detection)
+            return { type: BLOCK_TYPES.SOFT_EARTH, mineral: null };
         }
 
         // BOSS ARENA 1 at depth 500m (y = 105-115) - FULL WIDTH CHAMBER
