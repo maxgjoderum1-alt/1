@@ -1707,9 +1707,10 @@ class Player {
                                 // Only stop downward velocity when landing on top of block
                                 // When landing on top: player y < block center y (player is above block)
                                 if (this.vy > 0 && this.y < blockCenterY) {
-                                    // Fall damage - activate on high speed falls
-                                    if (!collided && this.vy > 0.8) {
-                                        const fallDamage = Math.pow(this.vy, 2) * 3;
+                                    // Fall damage - testing with low threshold
+                                    if (!collided && this.vy > 0.1) {
+                                        const fallDamage = Math.pow(this.vy, 2) * 5;
+                                        console.log('Fall damage triggered! Velocity:', this.vy, 'Damage:', fallDamage);
                                         this.hull -= fallDamage;
                                         collided = true;
 
