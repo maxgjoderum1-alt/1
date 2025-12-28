@@ -579,6 +579,54 @@ class Game {
             this.boss2.update(this.world);
         }
 
+        // Boss collision damage - check if player touches either boss
+        const bossDamageCooldown = 1000; // 1 second cooldown between boss damage
+        const currentTime = Date.now();
+
+        if (currentTime - this.player.lastDamageTime > bossDamageCooldown) {
+            // Check boss 1 collision
+            if (this.boss && this.boss.alive) {
+                const distToBoss1 = Math.sqrt(
+                    Math.pow(this.player.x - this.boss.x, 2) +
+                    Math.pow(this.player.y - this.boss.y, 2)
+                );
+
+                // Boss collision radius (boss is 3 blocks wide, 4 tall, player is ~1 block)
+                if (distToBoss1 < 2.5) {
+                    this.player.hull -= 10; // Boss deals 10 damage
+                    this.player.lastDamageTime = currentTime;
+                    // Knockback effect
+                    const knockbackX = (this.player.x - this.boss.x) * 0.3;
+                    const knockbackY = -0.5; // Knock player up
+                    this.player.vx += knockbackX;
+                    this.player.vy += knockbackY;
+                    // Spawn damage particles
+                    this.spawnParticles(this.player.x, this.player.y, '#ff0000', 10);
+                }
+            }
+
+            // Check boss 2 collision
+            if (this.boss2 && this.boss2.alive) {
+                const distToBoss2 = Math.sqrt(
+                    Math.pow(this.player.x - this.boss2.x, 2) +
+                    Math.pow(this.player.y - this.boss2.y, 2)
+                );
+
+                // Boss 2 collision radius
+                if (distToBoss2 < 2.5) {
+                    this.player.hull -= 15; // Boss 2 deals more damage (15)
+                    this.player.lastDamageTime = currentTime;
+                    // Stronger knockback for boss 2
+                    const knockbackX = (this.player.x - this.boss2.x) * 0.4;
+                    const knockbackY = -0.6;
+                    this.player.vx += knockbackX;
+                    this.player.vy += knockbackY;
+                    // Spawn damage particles
+                    this.spawnParticles(this.player.x, this.player.y, '#ff0000', 15);
+                }
+            }
+        }
+
         // Remove UNBREAKABLE floor when boss 1 is defeated
         if (this.boss && !this.boss.alive && !this.bossFloorRemoved) {
             const bossFloorY = 115; // Boss 1 arena floor level
@@ -1342,6 +1390,7 @@ class Player {
         this.drillCooldown = 300; // 300ms between drills
         this.lastDirection = 1; // Track last horizontal direction (1 = right, -1 = left)
         this.selectedSlot = 0; // Hotbar slot selection (0 = none, 1-5 = slot number based on arms level)
+        this.lastDamageTime = 0; // Track last time player took damage (for damage cooldown)
 
         this.availableUpgrades = [
             { id: 'drill', name: 'Drill Power', description: 'Mine harder blocks (required for deep mining)', baseCost: 500, maxLevel: 5 },
@@ -1658,12 +1707,19 @@ class Player {
                                 // Only stop downward velocity when landing on top of block
                                 // When landing on top: player y < block center y (player is above block)
                                 if (this.vy > 0 && this.y < blockCenterY) {
-                                    this.vy = 0;
-                                    // Damage on fast collisions when landing
-                                    if (!collided && speed > 0.6) {
-                                        this.hull -= speed * 0.3;
+                                    // Fall damage - increased threshold and scaling
+                                    if (!collided && this.vy > 0.5) {
+                                        // Damage scales with fall speed
+                                        const fallDamage = Math.pow(this.vy, 2) * 8; // Quadratic scaling
+                                        this.hull -= fallDamage;
                                         collided = true;
+
+                                        // Visual feedback for fall damage
+                                        if (game) {
+                                            game.spawnParticles(this.x, this.y, '#ff4400', Math.min(20, fallDamage * 2));
+                                        }
                                     }
+                                    this.vy = 0;
                                 } else if (this.vy < 0 && this.y > blockCenterY) {
                                     // Hitting ceiling from below: player y > block center y (player is below block)
                                     this.vy = 0;
