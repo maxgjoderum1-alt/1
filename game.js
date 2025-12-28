@@ -280,6 +280,7 @@ class Game {
         this.bombs = []; // Active thrown bombs
         this.audio = new AudioSystem();
         this.lastWarningTime = 0;
+        this.needsDrillUpgradeWarning = false; // Show warning when trying to drill gold without upgrade
         this.hasLeftShopArea = true; // Track if player has moved away from shop
         this.shopWaitStartTime = 0; // Track when player became stationary at shop
         this.shopWaitDuration = 1000; // 1 second in milliseconds
@@ -759,6 +760,21 @@ class Game {
             warning.textContent = '⚠️ OVERHEATING ⚠️';
             warningsContainer.appendChild(warning);
             shouldPlayWarning = true;
+        }
+
+        // Drill upgrade needed for gold warning
+        if (this.needsDrillUpgradeWarning) {
+            const warning = document.createElement('div');
+            warning.className = 'warning-message';
+            warning.textContent = '⚠️ NEED DRILL UPGRADE FOR GOLD ⚠️';
+            warning.style.background = 'rgba(255, 215, 0, 0.8)';
+            warning.style.borderColor = '#FFD700';
+            warningsContainer.appendChild(warning);
+            shouldPlayWarning = true;
+            // Reset flag after a short delay
+            setTimeout(() => {
+                this.needsDrillUpgradeWarning = false;
+            }, 2000);
         }
 
         // Play warning sound occasionally
@@ -1297,6 +1313,7 @@ class Player {
                 if (this.drillPower >= hardness) {
                     // Gold minerals require drill level 1 upgrade (drillPower >= 2)
                     if (block.mineral && block.mineral.name === 'Gold' && this.drillPower < 2) {
+                        game.needsDrillUpgradeWarning = true; // Show warning to player
                         return false; // Can't drill gold without drill upgrade
                     }
 
