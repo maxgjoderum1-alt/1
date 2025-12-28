@@ -598,8 +598,11 @@ class Game {
             const block = this.world.getBlock(bx, by);
             const hitBlock = block && block.type !== BLOCK_TYPES.AIR;
 
-            // Remove bullet if it hit something or ran out of life
-            if (hitBoss || hitBlock || bullet.life <= 0) {
+            // Check if bullet is outside world boundaries
+            const outsideBounds = bullet.x < 0 || bullet.x > WORLD_WIDTH || bullet.y < SURFACE_LEVEL || bullet.y > WORLD_HEIGHT;
+
+            // Remove bullet if it hit something, ran out of life, or went outside bounds
+            if (hitBoss || hitBlock || bullet.life <= 0 || outsideBounds) {
                 this.bullets.splice(i, 1);
             }
         }
@@ -869,13 +872,18 @@ class Game {
             const screenX = bullet.x * BLOCK_SIZE - this.camera.x;
             const screenY = bullet.y * BLOCK_SIZE - this.camera.y;
 
-            // Draw bullet as a small orange/yellow projectile
-            this.ctx.fillStyle = '#ffaa00';
+            // Draw bullet as a bright yellow/white projectile (very visible)
+            // Bright glow effect first
+            this.ctx.fillStyle = 'rgba(255, 255, 100, 0.7)';
+            this.ctx.fillRect(screenX - 4, screenY - 3, 8, 6);
+
+            // Core bullet (bright white/yellow)
+            this.ctx.fillStyle = '#ffff00';
             this.ctx.fillRect(screenX - 2, screenY - 1, 4, 2);
 
-            // Add slight glow effect
-            this.ctx.fillStyle = 'rgba(255, 255, 0, 0.5)';
-            this.ctx.fillRect(screenX - 3, screenY - 2, 6, 4);
+            // White center for extra visibility
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.fillRect(screenX - 1, screenY, 2, 1);
         });
 
         // Render player
@@ -2060,6 +2068,25 @@ class Player {
         ctx.lineTo(screenX + shakeX, screenY + 18 + shakeY); // Bottom point
         ctx.closePath();
         ctx.fill();
+
+        // Draw bomb in hand if slot 1 is selected and player has bombs
+        if (this.selectedSlot === 1 && this.bombs > 0) {
+            const direction = this.lastDirection;
+            const bombX = screenX + (direction * 10);
+            const bombY = screenY + 2;
+
+            // Draw bomb body (black sphere)
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(bombX, bombY, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw fuse (red)
+            ctx.fillStyle = '#ff0000';
+            ctx.beginPath();
+            ctx.arc(bombX - (direction * 3), bombY - 3, 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
 
         // Draw AK-47 if equipped AND slot 2 is selected
         if (this.weapon === 'ak47' && this.selectedSlot === 2) {
