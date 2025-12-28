@@ -1295,6 +1295,11 @@ class Player {
                 const hardness = this.getBlockHardness(block.type);
 
                 if (this.drillPower >= hardness) {
+                    // Gold minerals require drill level 1 upgrade (drillPower >= 2)
+                    if (block.mineral && block.mineral.name === 'Gold' && this.drillPower < 2) {
+                        return false; // Can't drill gold without drill upgrade
+                    }
+
                     // Mine the block
                     this.vx += vxPush;
                     this.vy += vyPush;
