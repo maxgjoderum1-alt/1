@@ -1100,7 +1100,7 @@ class Player {
         this.selectedSlot = 0; // Hotbar slot selection (0 = none, 1-5 = slot number based on arms level)
 
         this.availableUpgrades = [
-            { id: 'drill', name: 'Drill Power', description: 'Mine harder blocks (required for deep mining)', baseCost: 100, maxLevel: 5 },
+            { id: 'drill', name: 'Drill Power', description: 'Mine harder blocks (required for deep mining)', baseCost: 500, maxLevel: 5 },
             { id: 'cargo', name: 'Cargo Bay', description: 'Carry more minerals', baseCost: 50, maxLevel: 5 },
             { id: 'fuel_tank', name: 'Fuel Tank', description: 'More fuel capacity', baseCost: 80, maxLevel: 5 },
             { id: 'engine', name: 'Engine', description: 'Faster movement', baseCost: 60, maxLevel: 5 },
