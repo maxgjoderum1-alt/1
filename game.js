@@ -1748,7 +1748,7 @@ class Player {
                                 if (this.vy > 0 && this.y < blockCenterY) {
                                     console.log(`[COLLISION] Landing detected! BlockPos: (${bx}, ${by}), BlockType: ${block.type}, PlayerY: ${this.y.toFixed(2)}, vy: ${this.vy.toFixed(3)}, isFalling: ${this.isFalling}, fallStartY: ${this.fallStartY.toFixed(2)}, highestPoint: ${this.highestPoint.toFixed(2)}`);
                                     // Fall damage based on distance fallen without thrust
-                                    if (this.isFalling && this.fallStartY > 0) {
+                                    if (this.isFalling && this.fallStartY !== 0) {
                                         const fallDistance = this.y - this.fallStartY; // In blocks
                                         const fallMeters = fallDistance * 5; // Convert to meters (each block = 5m)
 
