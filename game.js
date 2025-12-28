@@ -1491,7 +1491,7 @@ class Player {
         this.y += this.vy;
 
         // Check and resolve VERTICAL collisions only
-        this.handleVerticalCollisions(world);
+        this.handleVerticalCollisions(world, game);
 
         // Collision with world boundaries
         // Allow player to reach edge blocks (need to be at x=0.5 for block 0, x=59.5 for block 59)
@@ -1669,7 +1669,7 @@ class Player {
         }
     }
 
-    handleVerticalCollisions(world) {
+    handleVerticalCollisions(world, game) {
         const blockX = Math.floor(this.x);
         const blockY = Math.floor(this.y);
 
