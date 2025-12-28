@@ -1475,8 +1475,8 @@ class Player {
         // Fall damage tracking - track falling without thrust
         const isThrustingUp = keys['ArrowUp'] || keys['w'] || keys['W'];
 
-        // Start tracking fall when falling without thrusting up
-        if (this.vy > 0.1 && !isThrustingUp && !this.isFalling) {
+        // Start tracking fall when falling without thrusting up (lowered threshold for smoother tracking)
+        if (this.vy > 0.05 && !isThrustingUp && !this.isFalling) {
             this.isFalling = true;
             this.fallStartY = this.y;
         }
@@ -1484,6 +1484,12 @@ class Player {
         // If player thrusts upward during fall, restart fall measurement from current position
         if (isThrustingUp && this.isFalling) {
             this.fallStartY = this.y; // Reset fall start to current position
+        }
+
+        // Stop tracking if player is moving upward or stationary
+        if (this.vy <= 0 && this.isFalling) {
+            this.isFalling = false;
+            this.fallStartY = 0;
         }
 
         // Apply drag (more drag for slower, more controllable movement)
