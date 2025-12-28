@@ -1730,14 +1730,14 @@ class Player {
                                         const fallDistance = this.y - this.fallStartY; // In blocks
                                         const fallMeters = fallDistance * 5; // Convert to meters (each block = 5m)
 
-                                        // Apply damage if fell more than 10 meters (2 blocks)
-                                        if (fallMeters > 10) {
-                                            const fallDamage = (fallMeters - 10) * 0.5; // 0.5 damage per meter after 10m
+                                        // Apply damage if fell more than 50 meters (10 blocks)
+                                        if (fallMeters > 50) {
+                                            const fallDamage = (fallMeters - 50) * 1.0; // 1.0 damage per meter after 50m
                                             this.hull -= fallDamage;
 
                                             // Visual feedback
                                             if (game) {
-                                                game.spawnParticles(this.x, this.y, '#ff4400', Math.min(30, Math.floor(fallMeters / 2)));
+                                                game.spawnParticles(this.x, this.y, '#ff4400', Math.min(40, Math.floor(fallMeters / 3)));
                                             }
                                         }
 
